@@ -1,0 +1,298 @@
+import { useEffect, useRef, useState } from 'react'
+import type { Block, Plan, Prefs } from './types'
+import {
+  DAY, EMOJI, PALETTE, STEP, conflicts, fmt, isValid, planFromJson, planToJson,
+  firstGap, sortBlocks, timeOptions, uid,
+} from './plans'
+import { Controls, FaceStage, inputCls } from './ui'
+
+const btn = 'rounded-md bg-slate-700 px-2.5 py-1.5 text-sm text-slate-100 hover:bg-slate-600 active:bg-slate-500'
+const btnGhost = 'rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+
+function Popover({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const away = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    document.addEventListener('mousedown', away)
+    document.addEventListener('keydown', esc)
+    return () => {
+      document.removeEventListener('mousedown', away)
+      document.removeEventListener('keydown', esc)
+    }
+  }, [open, onClose])
+  if (!open) return null
+  return (
+    <div ref={ref} className="absolute left-0 top-full z-20 mt-1 rounded-lg border border-slate-700 bg-slate-900 p-2 shadow-xl">
+      {children}
+    </div>
+  )
+}
+
+function TimeSelect({ value, onChange, includeEnd }: { value: number; onChange: (v: number) => void; includeEnd: boolean }) {
+  return (
+    <select className={`${inputCls} font-mono`} value={value} onChange={(e) => onChange(Number(e.target.value))}>
+      {timeOptions(includeEnd).map((m) => (
+        <option key={m} value={m}>
+          {fmt(m)}
+        </option>
+      ))}
+    </select>
+  )
+}
+
+function BlockRow({
+  block, bad, first, last, onPatch, onDelete, onMove,
+}: {
+  block: Block
+  bad: boolean
+  first: boolean
+  last: boolean
+  onPatch: (p: Partial<Block>) => void
+  onDelete: () => void
+  onMove: (dir: -1 | 1) => void
+}) {
+  const [pick, setPick] = useState<'color' | 'icon' | null>(null)
+  return (
+    <div
+      className={`flex flex-wrap items-center gap-2 rounded-lg border p-2 transition-colors ${
+        bad ? 'border-rose-500 bg-rose-500/10' : 'border-slate-800 bg-slate-900/60'
+      }`}
+    >
+      <div className="flex flex-col">
+        <button className={btnGhost} disabled={first} onClick={() => onMove(-1)} title="Move earlier">▲</button>
+        <button className={btnGhost} disabled={last} onClick={() => onMove(1)} title="Move later">▼</button>
+      </div>
+
+      <TimeSelect value={block.start} onChange={(v) => onPatch({ start: v })} includeEnd={false} />
+      <span className="text-slate-500">→</span>
+      <TimeSelect value={block.end} onChange={(v) => onPatch({ end: v })} includeEnd />
+
+      <div className="relative">
+        <button
+          className="h-8 w-8 rounded-md border border-slate-600"
+          style={{ background: block.color }}
+          onClick={() => setPick(pick === 'color' ? null : 'color')}
+          title="Colour"
+        />
+        <Popover open={pick === 'color'} onClose={() => setPick(null)}>
+          <div className="grid w-44 grid-cols-4 gap-1.5">
+            {PALETTE.map((c) => (
+              <button key={c} className="h-8 w-8 rounded-md border border-slate-700" style={{ background: c }}
+                onClick={() => { onPatch({ color: c }); setPick(null) }} />
+            ))}
+          </div>
+          <input type="color" value={block.color} onChange={(e) => onPatch({ color: e.target.value })}
+            className="mt-2 h-7 w-full bg-transparent" />
+        </Popover>
+      </div>
+
+      <div className="relative">
+        <button className="h-8 w-9 rounded-md border border-slate-600 bg-slate-800 text-lg leading-none"
+          onClick={() => setPick(pick === 'icon' ? null : 'icon')} title="Icon">
+          {block.icon}
+        </button>
+        <Popover open={pick === 'icon'} onClose={() => setPick(null)}>
+          <div className="grid w-64 grid-cols-8 gap-1">
+            {EMOJI.map((e) => (
+              <button key={e} className="rounded p-1 text-xl hover:bg-slate-700"
+                onClick={() => { onPatch({ icon: e }); setPick(null) }}>
+                {e}
+              </button>
+            ))}
+          </div>
+          <input
+            className={`${inputCls} mt-2 w-full`} placeholder="or paste any emoji"
+            onChange={(e) => { const ch = [...e.target.value][0]; if (ch) onPatch({ icon: ch }) }}
+          />
+        </Popover>
+      </div>
+
+      <input className={`${inputCls} min-w-[8rem] flex-1`} value={block.label}
+        placeholder="label (editor only)" onChange={(e) => onPatch({ label: e.target.value })} />
+
+      <button className={`${btn} bg-slate-800 hover:bg-rose-600`} onClick={onDelete} title="Delete block">✕</button>
+    </div>
+  )
+}
+
+export default function Editor({
+  plans, setPlans, selectedId, setSelectedId, prefs, setPrefs, now, scrub, setScrub,
+}: {
+  plans: Plan[]
+  setPlans: (p: Plan[]) => void
+  selectedId: string
+  setSelectedId: (id: string) => void
+  prefs: Prefs
+  setPrefs: (p: Partial<Prefs>) => void
+  now: number
+  scrub: number | null
+  setScrub: (v: number | null) => void
+}) {
+  const plan = plans.find((p) => p.id === selectedId) ?? plans[0]
+  const [error, setError] = useState<string | null>(null)
+  const [flash, setFlash] = useState<string | null>(null)
+  const [io, setIo] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+
+  const reject = (msg: string, id?: string) => {
+    setError(msg)
+    setFlash(id ?? null)
+    window.setTimeout(() => { setError(null); setFlash(null) }, 2600)
+  }
+
+  const commit = (blocks: Block[], failMsg: string, id?: string) => {
+    if (!isValid(blocks)) return reject(failMsg, id)
+    setError(null)
+    setPlans(plans.map((p) => (p.id === plan.id ? { ...p, blocks: sortBlocks(blocks) } : p)))
+  }
+
+  const patch = (id: string, p: Partial<Block>) => {
+    const next = plan.blocks.map((b) => (b.id === id ? { ...b, ...p } : b))
+    const b = next.find((x) => x.id === id)!
+    if (b.start >= b.end) return reject(`${fmt(b.start)}–${fmt(b.end)} is not a valid range`, id)
+    commit(next, 'That would overlap another block', id)
+  }
+
+  const addBlock = () => {
+    const gap = firstGap(plan)
+    if (!gap) return reject('No free time left in the day — delete or shrink a block first')
+    const nb: Block = { id: uid(), ...gap, color: PALETTE[plan.blocks.length % PALETTE.length], icon: '🧩', label: 'New block' }
+    commit([...plan.blocks, nb], 'No room for a new block')
+  }
+
+  /** Swap a block with its neighbour, keeping the pair's combined time span. */
+  const move = (id: string, dir: -1 | 1) => {
+    const s = sortBlocks(plan.blocks)
+    const i = s.findIndex((b) => b.id === id)
+    const j = i + dir
+    if (j < 0 || j >= s.length) return
+    const [a, b] = dir === 1 ? [s[i], s[j]] : [s[j], s[i]]
+    const aDur = a.end - a.start
+    const bDur = b.end - b.start
+    const first = { ...b, start: a.start, end: a.start + bDur }
+    const second = { ...a, start: b.end - aDur, end: b.end }
+    commit(plan.blocks.map((x) => (x.id === a.id ? second : x.id === b.id ? first : x)), 'Cannot swap those blocks')
+  }
+
+  const setPlan = (p: Plan) => setPlans(plans.map((x) => (x.id === p.id ? p : x)))
+
+  const newPlan = () => {
+    const p: Plan = { id: uid(), name: `Plan ${plans.length + 1}`, blocks: [] }
+    setPlans([...plans, p])
+    setSelectedId(p.id)
+  }
+  const duplicate = () => {
+    const p: Plan = { id: uid(), name: `${plan.name} copy`, blocks: plan.blocks.map((b) => ({ ...b, id: uid() })) }
+    setPlans([...plans, p])
+    setSelectedId(p.id)
+  }
+  const rename = () => {
+    const name = window.prompt('Plan name', plan.name)
+    if (name) setPlan({ ...plan, name })
+  }
+  const remove = () => {
+    if (plans.length === 1) return reject('Keep at least one plan')
+    if (!window.confirm(`Delete "${plan.name}"?`)) return
+    const rest = plans.filter((p) => p.id !== plan.id)
+    setPlans(rest)
+    setSelectedId(rest[0].id)
+  }
+
+  const exportJson = async () => {
+    const text = planToJson(plan)
+    setIo(text)
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1800)
+    } catch {
+      reject('Clipboard blocked — copy from the box below')
+    }
+  }
+  const importJson = () => {
+    try {
+      const p = planFromJson(io ?? '')
+      setPlans([...plans, p])
+      setSelectedId(p.id)
+      setIo(null)
+    } catch (e) {
+      reject(`Import failed: ${(e as Error).message}`)
+    }
+  }
+
+  const bad = conflicts(plan.blocks)
+  const covered = plan.blocks.reduce((n, b) => n + (b.end - b.start), 0)
+
+  return (
+    <div className="grid gap-5 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,42%)]">
+      {/* ---------------- left: plan + blocks ---------------- */}
+      <div className="flex min-w-0 flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+          <select className={inputCls} value={plan.id} onChange={(e) => setSelectedId(e.target.value)}>
+            {plans.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <button className={btn} onClick={newPlan}>New</button>
+          <button className={btn} onClick={duplicate}>Duplicate</button>
+          <button className={btn} onClick={rename}>Rename</button>
+          <button className={btn} onClick={remove}>Delete</button>
+          <div className="ml-auto flex gap-2">
+            <button className={btn} onClick={exportJson}>{copied ? 'Copied ✓' : 'Export JSON'}</button>
+            <button className={btn} onClick={() => setIo(io === null || io.length > 0 ? '' : null)}>Import JSON</button>
+          </div>
+        </div>
+
+        {io !== null && (
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+            <textarea
+              className={`${inputCls} h-40 w-full font-mono text-xs`} value={io}
+              placeholder='{ "name": "My plan", "blocks": [ { "start": 420, "end": 480, "color": "#f59e0b", "icon": "🥣", "label": "Breakfast" } ] }'
+              onChange={(e) => setIo(e.target.value)}
+            />
+            <div className="mt-2 flex gap-2">
+              <button className={btn} onClick={importJson}>Import as new plan</button>
+              <button className={btn} onClick={() => setIo(null)}>Close</button>
+            </div>
+          </div>
+        )}
+
+        {error && <div className="rounded-lg border border-rose-500 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">{error}</div>}
+
+        <div className="flex flex-col gap-2">
+          {sortBlocks(plan.blocks).map((b, i, arr) => (
+            <BlockRow
+              key={b.id} block={b} bad={bad.has(b.id) || flash === b.id}
+              first={i === 0} last={i === arr.length - 1}
+              onPatch={(p) => patch(b.id, p)}
+              onDelete={() => commit(plan.blocks.filter((x) => x.id !== b.id), 'Could not delete')}
+              onMove={(d) => move(b.id, d)}
+            />
+          ))}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button className={`${btn} bg-sky-600 hover:bg-sky-500`} onClick={addBlock}>+ Add block</button>
+          <span className="text-xs text-slate-500">
+            {plan.blocks.length} blocks · {Math.round((covered / DAY) * 100)}% of the day covered ·
+            {' '}uncovered time shows as grey · steps of {STEP} min
+          </span>
+        </div>
+      </div>
+
+      {/* ---------------- right: live preview ---------------- */}
+      <div className="flex flex-col gap-3">
+        <div className="rounded-xl border border-slate-800 bg-slate-950 p-3">
+          <FaceStage plan={plan} now={now} prefs={prefs} labels className="h-[min(56vh,520px)] w-full" />
+        </div>
+        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+          <Controls prefs={prefs} setPrefs={setPrefs} scrub={scrub} setScrub={setScrub} now={now} />
+        </div>
+      </div>
+    </div>
+  )
+}

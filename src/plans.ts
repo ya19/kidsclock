@@ -1,0 +1,253 @@
+import type { Block, Plan, Prefs, Segment } from './types'
+
+export const DAY = 1440
+export const STEP = 15
+export const GAP_COLOR = '#2b303c'
+
+export const PALETTE = [
+  '#f43f5e', '#f97316', '#f59e0b', '#facc15',
+  '#84cc16', '#22c55e', '#14b8a6', '#06b6d4',
+  '#3b82f6', '#6366f1', '#a855f7', '#ec4899',
+  '#e2e8f0', '#94a3b8', '#7c5c3e', '#0ea5e9',
+]
+
+export const EMOJI = [
+  '😴', '🌅', '🥣', '🪥', '👕', '🎒', '🚌', '🏫',
+  '📚', '✏️', '🎨', '🧩', '🎵', '⚽', '🚲', '🛝',
+  '🍎', '🍕', '🥪', '🥕', '🛁', '📖', '🧸', '🧹',
+  '🐕', '🌳', '🚗', '✈️', '🏖️', '🎬', '💤', '🌙',
+]
+
+export const uid = () => Math.random().toString(36).slice(2, 9)
+
+/* ---------- time helpers ---------- */
+
+export const clampMin = (m: number) => Math.max(0, Math.min(DAY, Math.round(m)))
+export const snap = (m: number) => clampMin(Math.round(m / STEP) * STEP)
+
+export function fmt(m: number): string {
+  const t = ((Math.round(m) % DAY) + DAY) % DAY
+  const h = Math.floor(t / 60)
+  const mm = t % 60
+  if (Math.round(m) === DAY) return '24:00'
+  return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
+}
+
+export function minutesNow(d = new Date()): number {
+  return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60
+}
+
+/** Every 15-min option in the day, optionally including 24:00. */
+export function timeOptions(includeEnd: boolean): number[] {
+  const out: number[] = []
+  for (let m = 0; m <= DAY; m += STEP) {
+    if (m === DAY && !includeEnd) continue
+    out.push(m)
+  }
+  return out
+}
+
+/* ---------- blocks ---------- */
+
+export const sortBlocks = (bs: Block[]) => [...bs].sort((a, b) => a.start - b.start)
+
+/** ids of blocks that overlap another block, or are otherwise invalid */
+export function conflicts(blocks: Block[]): Set<string> {
+  const bad = new Set<string>()
+  for (const b of blocks) {
+    if (!(b.start >= 0 && b.end <= DAY && b.start < b.end)) bad.add(b.id)
+  }
+  const s = sortBlocks(blocks)
+  for (let i = 0; i < s.length - 1; i++) {
+    if (s[i].end > s[i + 1].start) {
+      bad.add(s[i].id)
+      bad.add(s[i + 1].id)
+    }
+  }
+  return bad
+}
+
+export const isValid = (blocks: Block[]) => conflicts(blocks).size === 0
+
+/** Blocks plus the neutral gaps between them, covering 0..1440. */
+export function segments(plan: Plan): Segment[] {
+  const s = sortBlocks(plan.blocks)
+  const out: Segment[] = []
+  let cursor = 0
+  s.forEach((b, i) => {
+    if (b.start > cursor) out.push({ start: cursor, end: b.start, block: null, index: -1 })
+    out.push({ start: b.start, end: b.end, block: b, index: i })
+    cursor = Math.max(cursor, b.end)
+  })
+  if (cursor < DAY) out.push({ start: cursor, end: DAY, block: null, index: -1 })
+  return out
+}
+
+export function blockAt(plan: Plan, now: number): Block | null {
+  return sortBlocks(plan.blocks).find((b) => now >= b.start && now < b.end) ?? null
+}
+
+/** The next block today, wrapping around to tomorrow morning at the end of the day. */
+export function nextBlock(plan: Plan, now: number): Block | null {
+  const s = sortBlocks(plan.blocks)
+  const later = s.find((b) => b.start > now)
+  if (later) return later
+  const first = s[0]
+  return first && first !== blockAt(plan, now) ? first : null
+}
+
+/** First gap of at least `len` minutes, for "add block". */
+export function firstGap(plan: Plan, len = 60): { start: number; end: number } | null {
+  for (const seg of segments(plan)) {
+    if (seg.block === null && seg.end - seg.start >= STEP) {
+      return { start: seg.start, end: Math.min(seg.end, seg.start + len) }
+    }
+  }
+  return null
+}
+
+/* ---------- seeds ---------- */
+
+const B = (start: number, end: number, color: string, icon: string, label: string): Block =>
+  ({ id: uid(), start, end, color, icon, label })
+
+export function seedPlans(): Plan[] {
+  return [
+    {
+      id: uid(),
+      name: 'Weekday',
+      blocks: [
+        B(0, 420, '#6366f1', '😴', 'Sleep'),
+        B(420, 450, '#f59e0b', '🌅', 'Wake up'),
+        B(450, 480, '#facc15', '🥣', 'Breakfast'),
+        B(480, 510, '#22c55e', '👕', 'Get dressed'),
+        B(510, 540, '#06b6d4', '🚌', 'Ride to school'),
+        B(540, 720, '#3b82f6', '🏫', 'School'),
+        B(720, 780, '#f97316', '🍕', 'Lunch'),
+        B(780, 930, '#3b82f6', '📚', 'School'),
+        B(930, 1020, '#84cc16', '🛝', 'Playground'),
+        B(1020, 1080, '#a855f7', '🎨', 'Quiet play'),
+        B(1080, 1140, '#f43f5e', '🍎', 'Dinner'),
+        B(1140, 1170, '#14b8a6', '🛁', 'Bath'),
+        B(1170, 1200, '#ec4899', '📖', 'Story'),
+        B(1200, 1440, '#6366f1', '🌙', 'Sleep'),
+      ],
+    },
+    {
+      id: uid(),
+      name: 'Weekend',
+      blocks: [
+        B(0, 480, '#6366f1', '😴', 'Sleep'),
+        B(480, 540, '#facc15', '🥣', 'Slow breakfast'),
+        B(540, 660, '#84cc16', '🧸', 'Free play'),
+        // deliberate 30-min gap here — uncovered time renders neutral grey
+        B(690, 780, '#22c55e', '🌳', 'Park'),
+        B(780, 840, '#f97316', '🥪', 'Lunch'),
+        B(840, 960, '#a855f7', '💤', 'Rest / quiet'),
+        B(960, 1080, '#06b6d4', '🚲', 'Bike ride'),
+        B(1080, 1140, '#f43f5e', '🍕', 'Dinner'),
+        B(1140, 1200, '#14b8a6', '🛁', 'Bath'),
+        B(1200, 1230, '#ec4899', '📖', 'Story'),
+        B(1230, 1440, '#6366f1', '🌙', 'Sleep'),
+      ],
+    },
+    {
+      id: uid(),
+      name: 'Travel day',
+      blocks: [
+        B(0, 330, '#6366f1', '😴', 'Sleep'),
+        B(330, 390, '#f59e0b', '🌅', 'Early wake up'),
+        B(390, 420, '#facc15', '🥣', 'Breakfast'),
+        B(420, 510, '#94a3b8', '🚗', 'Drive to airport'),
+        B(510, 630, '#0ea5e9', '🎒', 'Airport wait'),
+        B(630, 840, '#3b82f6', '✈️', 'Flight'),
+        B(840, 900, '#f97316', '🥪', 'Snack'),
+        B(900, 1020, '#94a3b8', '🚗', 'Drive to hotel'),
+        B(1020, 1140, '#84cc16', '🏖️', 'Explore'),
+        B(1140, 1200, '#f43f5e', '🍕', 'Dinner'),
+        B(1200, 1260, '#14b8a6', '🛁', 'Bath'),
+        B(1260, 1440, '#6366f1', '🌙', 'Sleep'),
+      ],
+    },
+  ]
+}
+
+/* ---------- persistence ---------- */
+
+const KEY = 'kidsclock.v1'
+
+export type Saved = { plans: Plan[]; selectedId: string; prefs: Prefs }
+
+export const defaultPrefs: Prefs = {
+  face: 'A',
+  size: '336',
+  colorblind: false,
+  patterns: false,
+  screen: 'editor',
+}
+
+function sane(p: unknown): p is Plan {
+  const q = p as Plan
+  return !!q && typeof q.name === 'string' && Array.isArray(q.blocks)
+}
+
+export function load(): Saved {
+  try {
+    const raw = localStorage.getItem(KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<Saved>
+      const plans = (parsed.plans ?? []).filter(sane)
+      if (plans.length) {
+        return {
+          plans,
+          selectedId: plans.some((p) => p.id === parsed.selectedId) ? parsed.selectedId! : plans[0].id,
+          prefs: { ...defaultPrefs, ...(parsed.prefs ?? {}) },
+        }
+      }
+    }
+  } catch {
+    /* fall through to seeds */
+  }
+  const plans = seedPlans()
+  return { plans, selectedId: plans[0].id, prefs: defaultPrefs }
+}
+
+export function save(s: Saved) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(s))
+  } catch {
+    /* quota / private mode — prototyping only, ignore */
+  }
+}
+
+/* ---------- import / export ---------- */
+
+export function planToJson(plan: Plan): string {
+  return JSON.stringify(
+    { name: plan.name, blocks: plan.blocks.map(({ id: _id, ...rest }) => rest) },
+    null,
+    2,
+  )
+}
+
+/** Accepts { name, blocks } or a bare blocks array. Throws with a readable message. */
+export function planFromJson(text: string): Plan {
+  const data = JSON.parse(text)
+  const rawBlocks = Array.isArray(data) ? data : data?.blocks
+  if (!Array.isArray(rawBlocks)) throw new Error('Expected { name, blocks: [...] }')
+  const blocks: Block[] = rawBlocks.map((b: Partial<Block>, i: number) => {
+    const start = snap(Number(b.start))
+    const end = snap(Number(b.end))
+    if (!Number.isFinite(start) || !Number.isFinite(end)) throw new Error(`Block ${i + 1}: bad start/end`)
+    return {
+      id: uid(),
+      start,
+      end,
+      color: typeof b.color === 'string' ? b.color : PALETTE[i % PALETTE.length],
+      icon: typeof b.icon === 'string' && b.icon ? [...b.icon][0] : '⬜',
+      label: typeof b.label === 'string' ? b.label : '',
+    }
+  })
+  if (!isValid(blocks)) throw new Error('Blocks overlap or have invalid times')
+  return { id: uid(), name: typeof data?.name === 'string' ? data.name : 'Imported plan', blocks: sortBlocks(blocks) }
+}
