@@ -25,7 +25,8 @@ type Kit = {
 }
 const kit = (light: boolean): Kit =>
   light
-    ? { bg: '#eef1f6', gap: '#d3d9e4', ink: '#0f172a', inkFaint: 0.5, spent: '#ffffff', spentOpacity: 0.5 }
+    ? // warm paper rather than office grey; spent time fades toward the dial itself
+      { bg: '#fbf8f3', gap: '#e7dfd2', ink: '#2b2621', inkFaint: 0.55, spent: '#fbf8f3', spentOpacity: 0.58 }
     : { bg: '#0a0c11', gap: GAP_COLOR, ink: '#ffffff', inkFaint: 0.62, spent: '#05070b', spentOpacity: 0.52 }
 
 const f = (n: number) => Number(n.toFixed(3))
@@ -74,12 +75,29 @@ function patternBody(i: number) {
   }
 }
 
-function useGfx(patterns: boolean) {
+function useGfx(patterns: boolean, light = false) {
   const raw = useId().replace(/[^a-zA-Z0-9]/g, '')
+  const dial = `url(#${raw}dial)`
   const pat = (i: number) => `url(#${raw}p${((i % PATTERN_COUNT) + PATTERN_COUNT) % PATTERN_COUNT})`
   const glow = `url(#${raw}glow)`
   const defs = (
     <defs>
+      {/* a soft centre-to-edge wash, so the dial reads as paper, not as a flat swatch */}
+      <radialGradient id={`${raw}dial`} cx="50%" cy="42%" r="72%">
+        {light ? (
+          <>
+            <stop offset="0%" stopColor="#fffdf9" />
+            <stop offset="62%" stopColor="#fbf7f1" />
+            <stop offset="100%" stopColor="#efe7db" />
+          </>
+        ) : (
+          <>
+            <stop offset="0%" stopColor="#141821" />
+            <stop offset="60%" stopColor="#0c0f16" />
+            <stop offset="100%" stopColor="#05070b" />
+          </>
+        )}
+      </radialGradient>
       <filter id={`${raw}glow`} x="-60%" y="-60%" width="220%" height="220%">
         <feGaussianBlur stdDeviation="2.4" result="b" />
         <feMerge>
@@ -95,7 +113,7 @@ function useGfx(patterns: boolean) {
         ))}
     </defs>
   )
-  return { pat, glow, defs }
+  return { pat, glow, dial, defs }
 }
 
 /** A block shape: flat color, plus an optional distinct pattern on top. */
@@ -168,7 +186,7 @@ function DialHours({ r, hours, offset = 0, period = DAY, size = 6, k }: {
   )
 }
 
-const Bg = ({ k, rx = 0 }: { k: Kit; rx?: number }) => <rect x="0" y="0" width="100" height="100" rx={rx} fill={k.bg} />
+const Bg = ({ fill, rx = 0 }: { fill: string; rx?: number }) => <rect x="0" y="0" width="100" height="100" rx={rx} fill={fill} />
 
 /** Arc-length-aware emoji size so icons never spill out of a thin slice. */
 function arcEmoji(dur: number, radius: number, band: number, period = DAY) {
@@ -219,8 +237,8 @@ function RingFace({
   ticks?: boolean
   dimElapsed?: boolean
 }) {
-  const { pat, defs } = useGfx(patterns)
   const k = kit(light)
+  const { pat, dial, defs } = useGfx(patterns, light)
   // Hour numbers live outside the ring, so the ring gives up room for them.
   const scale = hours ? 0.86 : 1
   const ri = riBase * scale
@@ -231,7 +249,7 @@ function RingFace({
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" role="img">
       {defs}
-      <Bg k={k} />
+      <Bg fill={dial} />
       {segments(plan).map((s: Segment, i) => {
         const mid = (s.start + s.end) / 2
         const [ex, ey] = pol(rm, turned(mid))
@@ -275,15 +293,15 @@ export function FaceG(p: FaceProps) {
  * ------------------------------------------------------------------ */
 
 export function FaceB({ plan, now, size, patterns, hours, dimPast, light }: FaceProps) {
-  const { pat, defs } = useGfx(patterns)
   const k = kit(light)
+  const { pat, dial, defs } = useGfx(patterns, light)
   const rings = hours
     ? [{ ri: 17, ro: 26 }, { ri: 30, ro: 40 }]
     : [{ ri: 19, ro: 30 }, { ri: 34, ro: 46 }]
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" role="img">
       {defs}
-      <Bg k={k} />
+      <Bg fill={dial} />
       {rings.map((ring, r) => {
         const lo = r * HALF, hi = lo + HALF
         const rm = (ring.ri + ring.ro) / 2
@@ -334,8 +352,8 @@ export function FaceB({ plan, now, size, patterns, hours, dimPast, light }: Face
  * ------------------------------------------------------------------ */
 
 export function FaceC({ plan, now, size, patterns, hours, dimPast, light }: FaceProps) {
-  const { pat, defs } = useGfx(patterns)
   const k = kit(light)
+  const { pat, dial, defs } = useGfx(patterns, light)
   const x = hours ? 28 : 18
   const w = hours ? 54 : 64
   const y0 = 6, y1 = 94
@@ -344,7 +362,7 @@ export function FaceC({ plan, now, size, patterns, hours, dimPast, light }: Face
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" role="img">
       {defs}
-      <Bg k={k} />
+      <Bg fill={dial} />
       <clipPath id={`${raw}clip`}>
         <rect x={x} y={y0} width={w} height={y1 - y0} rx="7" />
       </clipPath>
@@ -386,8 +404,8 @@ export function FaceC({ plan, now, size, patterns, hours, dimPast, light }: Face
  * ------------------------------------------------------------------ */
 
 export function FaceE({ plan, now, size, patterns, light }: FaceProps) {
-  const { pat, defs } = useGfx(patterns)
   const k = kit(light)
+  const { pat, dial, defs } = useGfx(patterns, light)
   const cur = blockAt(plan, now)
   const next = nextBlock(plan, now)
   const span = cur ? { start: cur.start, end: cur.end } : { start: lastEnd(plan, now), end: next?.start ?? DAY }
@@ -397,7 +415,7 @@ export function FaceE({ plan, now, size, patterns, light }: FaceProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" role="img">
       {defs}
-      <Bg k={k} />
+      <Bg fill={dial} />
       <Shape rect={{ x: 0, y: 0, w: 100, h: 100 }} color={cur?.color ?? k.gap}
         index={idx} patterns={patterns} pat={pat} />
       {cur && <Emo x={50} y={42} size={36} ch={cur.icon} />}
@@ -430,8 +448,8 @@ function lastEnd(plan: FaceProps['plan'], now: number) {
  * ------------------------------------------------------------------ */
 
 export function FaceF({ plan, now, size, patterns, dimPast, light }: FaceProps) {
-  const { pat, glow, defs } = useGfx(patterns)
   const k = kit(light)
+  const { pat, glow, dial, defs } = useGfx(patterns, light)
   const blocks = sortBlocks(plan.blocks)
   const n = Math.max(1, blocks.length)
   const cols = Math.min(n, Math.max(1, Math.ceil(Math.sqrt(n * 1.7))))
@@ -463,7 +481,7 @@ export function FaceF({ plan, now, size, patterns, dimPast, light }: FaceProps) 
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" role="img">
       {defs}
-      <Bg k={k} />
+      <Bg fill={dial} />
       {Array.from({ length: rows }, (_, rw) => {
         const firstI = rw * cols
         const lastI = Math.min(n - 1, firstI + cols - 1)

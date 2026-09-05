@@ -27,7 +27,7 @@ export default function Display({
   }, [panel, onExit])
 
   return (
-    <div className="fixed inset-0" style={{ background: prefs.light ? '#eef1f6' : '#000' }}>
+    <div className="fixed inset-0" style={{ background: prefs.light ? '#f3ede4' : '#000' }}>
       <FaceStage plan={plan} now={now} prefs={prefs} className="h-full w-full" />
 
       <button

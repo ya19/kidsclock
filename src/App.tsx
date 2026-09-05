@@ -51,7 +51,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-[#faf8f5] text-slate-900">
       <ColorFilters />
       <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5">
         <span className="text-sm font-semibold tracking-wide text-slate-900">Color Clock</span>

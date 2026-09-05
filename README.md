@@ -122,12 +122,12 @@ at 240px while E (focus card) is unaffected — it only ever shows one thing.
 - **colorblind check** — a deuteranopia `feColorMatrix` over the face.
 - **patterns** — a distinct texture per block, so blocks stay distinguishable when
   the colors collapse.
-- **light face** — draws the face on a light background instead of near-black: hands,
-  ticks and hour numbers flip to dark ink, gaps become light grey, and *dim past*
-  fades spent time toward white rather than blacking it out. The editor is light
-  either way; this toggle is only about the face itself, so you can prop both up on
-  the device and see which one the kid reads faster. Dark is the default — colours
-  pop hardest against black and the device disappears on a shelf at night.
+- **light face** — on by default. The dial is warm paper (`#fbf8f3`) with a soft
+  centre-to-edge wash rather than a flat grey or a clinical white, hands and hour
+  numbers are a warm near-black, gaps are a muted sand, and *dim past* fades spent
+  time toward the dial itself. Turning it off gives the original near-black dial,
+  which still wins for battery on an LCD watch and for not glowing at a dark room —
+  so keep comparing the two on the real device.
 - **dim past** — shades the part of the day already spent, on every face that has a
   time axis. It is deliberately gentle (52% on dark, 50% on light): done time should
   read as *done*, not as *gone* — the child can still see what already happened, which
@@ -225,5 +225,5 @@ allowed animation, and `blockAt` / `nextBlock` from `plans.ts`.
 - Zero text on any face. Color, icon and position only.
 - No animation beyond the hand sweep (a single 800 ms transition on the hand, the
   now-line and the progress ring). Nothing blinks, nothing asks for attention.
-- Dark face background by default, so the device disappears on a shelf at night —
-  with a *light face* toggle when you want to compare.
+- Warm paper face by default, with a *light face* toggle back to the near-black dial
+  for night-time and battery comparisons.

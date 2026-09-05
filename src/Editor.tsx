@@ -427,7 +427,7 @@ export default function Editor({
 
       {/* ---------------- right: live preview ---------------- */}
       <div className="flex flex-col gap-3">
-        <div className="rounded-xl border border-slate-200 bg-slate-100 p-3">
+        <div className="rounded-xl border border-slate-200 bg-[#f3ede4] p-3">
           <FaceStage plan={plan} now={now} prefs={prefs} labels className="h-[min(56vh,520px)] w-full" />
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-3">
