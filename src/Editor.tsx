@@ -5,6 +5,7 @@ import {
   firstGap, sortBlocks, timeOptions, todayIndex, uid,
 } from './plans'
 import { Controls, FaceStage, inputCls } from './ui'
+import { loadApiKey, parseDayText, parseDayWithClaude, saveApiKey } from './dayText'
 
 const btn = 'rounded-md bg-slate-700 px-2.5 py-1.5 text-sm text-slate-100 hover:bg-slate-600 active:bg-slate-500'
 const btnGhost = 'rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-100'
@@ -166,6 +167,81 @@ function WeekStrip({
   )
 }
 
+/** Write the day in words; get blocks. Claude is optional and needs your own key. */
+function DayWriter({ onPlan }: { onPlan: (name: string, blocks: Block[], notes: string[]) => void }) {
+  const [text, setText] = useState('')
+  const [key, setKey] = useState(loadApiKey)
+  const [showKey, setShowKey] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  const build = () => {
+    setErr(null)
+    const { blocks, notes } = parseDayText(text)
+    if (!blocks.length) return setErr('No times found. Try lines like "7:00 wake up" or "9-12 school".')
+    onPlan('Written day', blocks, notes)
+  }
+
+  const ask = async () => {
+    setErr(null)
+    setBusy(true)
+    try {
+      const { blocks, notes } = await parseDayWithClaude(text, key)
+      onPlan('Written day', blocks, notes)
+    } catch (e) {
+      setErr((e as Error).message || 'Claude call failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+      <div className="mb-2 flex items-baseline gap-2">
+        <span className="text-sm font-medium text-slate-200">Write the day</span>
+        <span className="text-xs text-slate-500">one activity per line — it becomes a new plan</span>
+      </div>
+      <textarea
+        className={`${inputCls} h-28 w-full`}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={'7:00 wake up\n7:30 breakfast\n9:00-12:00 school\n12 lunch\n13:00 nap\n18:00 dinner\n19:30 bath\n20:00 sleep'}
+      />
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <button className={`${btn} bg-sky-600 hover:bg-sky-500`} onClick={build} disabled={!text.trim()}>
+          Build blocks
+        </button>
+        <button className={btn} onClick={ask} disabled={!text.trim() || !key || busy} title={key ? 'Send the text to Claude' : 'Add an API key first'}>
+          {busy ? 'Asking Claude…' : 'Ask Claude'}
+        </button>
+        <button className={btnGhost} onClick={() => setShowKey((v) => !v)}>
+          {key ? 'API key ✓' : 'add API key'}
+        </button>
+      </div>
+
+      {showKey && (
+        <div className="mt-2 rounded-lg border border-slate-800 bg-slate-950 p-2">
+          <p className="mb-2 text-xs text-slate-400">
+            Your Anthropic key is kept in this browser only (localStorage). It is never committed, never
+            sent anywhere but Anthropic, and anyone using this device can read it — so do not add it on
+            the kid&rsquo;s tablet. &ldquo;Build blocks&rdquo; needs no key at all.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <input
+              type="password" className={`${inputCls} min-w-[16rem] flex-1 font-mono text-xs`}
+              value={key} placeholder="sk-ant-..." onChange={(e) => setKey(e.target.value)}
+            />
+            <button className={btn} onClick={() => { saveApiKey(key); setShowKey(false) }}>Save</button>
+            <button className={btn} onClick={() => { setKey(''); saveApiKey('') }}>Clear</button>
+          </div>
+        </div>
+      )}
+
+      {err && <div className="mt-2 rounded-lg border border-rose-500 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">{err}</div>}
+    </div>
+  )
+}
+
 export default function Editor({
   plans, setPlans, selectedId, setSelectedId, week, setWeek, prefs, setPrefs, now, scrub, setScrub,
 }: {
@@ -251,6 +327,14 @@ export default function Editor({
     setSelectedId(rest[0].id)
   }
 
+  /** A written day always lands in a new plan, so nothing you already have is lost. */
+  const fromText = (name: string, blocks: Block[], notes: string[]) => {
+    const p: Plan = { id: uid(), name, blocks }
+    setPlans([...plans, p])
+    setSelectedId(p.id)
+    if (notes.length) reject(`Adjusted — ${notes.join(' · ')}`)
+  }
+
   const exportJson = async () => {
     const text = planToJson(plan)
     setIo(text)
@@ -301,6 +385,8 @@ export default function Editor({
         </div>
 
         <WeekStrip plans={plans} week={week} setWeek={setWeek} selectedId={plan.id} onPick={setSelectedId} />
+
+        <DayWriter onPlan={fromText} />
 
         {io !== null && (
           <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">

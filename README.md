@@ -47,6 +47,50 @@ A live preview of the selected face sits next to the editor.
 seconds. Dev controls hide behind the small dot in the top-right corner; `Esc`
 closes that panel, `Esc` again returns to the editor.
 
+## Write the day in words
+
+The editor has a **Write the day** box. One activity per line, in any of these shapes:
+
+```
+7:00 wake up
+7:30 breakfast
+9:00-12:00 school
+12 lunch
+1pm nap
+bath 19:30
+20:00 sleep
+```
+
+**Build blocks** parses it locally — no key, no network, no cost — picking an icon
+and colour per activity from the words. It always creates a *new* plan, so nothing
+you already have is overwritten, and it reports what it had to adjust: lines with no
+time in them, blocks trimmed because they overlapped, and inferred ends longer than
+three hours. Rules worth knowing: an end nobody wrote runs to the next time written;
+the last line gets an hour, unless it is sleep, which runs to midnight.
+
+### The optional Claude path
+
+**Ask Claude** handles prose the parser cannot read ("she naps after lunch for about
+an hour"). It needs your own Anthropic API key, and there is nowhere secret to put it
+in a static site:
+
+- `.env` / `VITE_*` values are **compiled into the published bundle** — on a public
+  site they are readable by anyone. They are not secrets.
+- GitHub Actions secrets are safe during a build but not once injected into frontend code.
+
+So the key is typed into the app and kept in that browser's `localStorage` only. It is
+never committed and never sent anywhere but Anthropic — but anyone using that device
+can read it, so do not add it on the kid's tablet. Everything else in the app works
+without it. The SDK is imported on demand, so the display screen never downloads it.
+
+If you ever want the AI path without a key on the device, the answer is a small
+serverless proxy (Cloudflare Worker, Netlify/Vercel function) holding the key
+server-side — that is a real backend, deliberately out of scope here.
+
+Whatever comes back from Claude is snapped to 15 minutes, de-overlapped and clamped
+by the same local code that handles typed input — the model is never trusted to
+produce a valid plan on its own.
+
 ## The week
 
 Each weekday is assigned a plan in the **Week** strip at the top of the editor
@@ -120,6 +164,7 @@ never appears on the kid display. Three plans ship as seeds: *Weekday*, *Weekend
 ```
 src/types.ts    types shared by everything (Block, Plan, FaceProps, Prefs)
 src/plans.ts    seeds, palette, emoji set, time helpers, overlap rules, storage, JSON import/export
+src/dayText.ts  written-day parser, the optional Claude call, and the API key in localStorage
 src/faces.tsx   geometry helpers, patterns, the six faces, the face registry
 src/ui.tsx      face stage (single + compare), size list, control bar, colorblind filter
 src/Editor.tsx  parent screen
