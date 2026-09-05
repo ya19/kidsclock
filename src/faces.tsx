@@ -122,6 +122,37 @@ function Emo({ x, y, size, ch }: { x: number; y: number; size: number; ch: strin
   )
 }
 
+/** An hour number on a dial. Text on the face is opt-in (the `hours` toggle). */
+function HourNum({ x, y, size = 6, children }: { x: number; y: number; size?: number; children: number }) {
+  return (
+    <text
+      x={x} y={y} fontSize={f(size)} textAnchor="middle" dominantBaseline="central"
+      fill="#fff" fillOpacity="0.62" fontFamily="ui-sans-serif, system-ui, sans-serif"
+      style={{ userSelect: 'none' }}
+    >
+      {children}
+    </text>
+  )
+}
+
+/** Hour numbers spaced around a circular dial of `period` minutes. */
+function DialHours({ r, hours, offset = 0, period = DAY, size = 6 }: {
+  r: number
+  hours: number[]
+  offset?: number
+  period?: number
+  size?: number
+}) {
+  return (
+    <g>
+      {hours.map((h) => {
+        const [x, y] = pol(r, h * 60 - offset, period)
+        return <HourNum key={h} x={x} y={y} size={size}>{h}</HourNum>
+      })}
+    </g>
+  )
+}
+
 const Bg = ({ rx = 0 }: { rx?: number }) => <rect x="0" y="0" width="100" height="100" rx={rx} fill="#0a0c11" />
 
 /** Arc-length-aware emoji size so icons never spill out of a thin slice. */
@@ -165,7 +196,7 @@ function Hand({ now, r0, r1, period = DAY }: { now: number; r0: number; r1: numb
  * ------------------------------------------------------------------ */
 
 function RingFace({
-  plan, now, size, patterns, ri, ro, offset = 0, ticks = false, dimElapsed = false,
+  plan, now, size, patterns, hours, ri: riBase, ro: roBase, offset = 0, ticks = false, dimElapsed = false,
 }: FaceProps & {
   ri: number
   ro: number
@@ -174,6 +205,10 @@ function RingFace({
   dimElapsed?: boolean
 }) {
   const { pat, defs } = useGfx(patterns)
+  // Hour numbers live outside the ring, so the ring gives up room for them.
+  const k = hours ? 0.86 : 1
+  const ri = riBase * k
+  const ro = roBase * k
   const rm = (ri + ro) / 2
   const turned = (m: number) => m - offset
 
@@ -196,6 +231,7 @@ function RingFace({
         <path d={ringPath(ri, ro, turned(0), turned(Math.min(now, DAY - 0.01)))} fill="#05070b" opacity="0.88" />
       )}
       {ticks && <Ticks ri={ro + 1} ro={ro + 3.4} />}
+      {hours && <DialHours r={ro + 5.6} hours={[0, 6, 12, 18]} offset={offset} size={5.4} />}
       <Hand now={(now - offset + DAY) % DAY} r0={-2} r1={ri - 1.5} />
       <circle cx={C} cy={C} r="2.6" fill="#fff" />
     </svg>
@@ -221,12 +257,11 @@ export function FaceG(p: FaceProps) {
  * B — 12h double ring (inner 00-12, outer 12-24)
  * ------------------------------------------------------------------ */
 
-export function FaceB({ plan, now, size, patterns }: FaceProps) {
+export function FaceB({ plan, now, size, patterns, hours }: FaceProps) {
   const { pat, defs } = useGfx(patterns)
-  const rings = [
-    { ri: 19, ro: 30 }, // 00:00 – 12:00
-    { ri: 34, ro: 46 }, // 12:00 – 24:00
-  ]
+  const rings = hours
+    ? [{ ri: 17, ro: 26 }, { ri: 30, ro: 40 }]
+    : [{ ri: 19, ro: 30 }, { ri: 34, ro: 46 }]
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" role="img">
       {defs}
@@ -255,6 +290,14 @@ export function FaceB({ plan, now, size, patterns }: FaceProps) {
           </g>
         )
       })}
+      {hours && (
+        <>
+          {/* inner ring reads like a wall clock, so it gets 0/3/6/9 in the hole */}
+          <DialHours r={11} hours={[0, 3, 6, 9]} period={HALF} size={4.6} />
+          <DialHours r={44.6} hours={[12, 15, 18, 21]} period={HALF} offset={HALF} size={5.2} />
+        </>
+      )}
+
       {/* the hand only covers the ring for the current half of the day */}
       <Hand now={now} period={HALF}
         r0={now < HALF ? rings[0].ri - 2.5 : rings[1].ri - 2.5}
@@ -268,9 +311,11 @@ export function FaceB({ plan, now, size, patterns }: FaceProps) {
  * C — vertical timeline, morning at the top
  * ------------------------------------------------------------------ */
 
-export function FaceC({ plan, now, size, patterns }: FaceProps) {
+export function FaceC({ plan, now, size, patterns, hours }: FaceProps) {
   const { pat, defs } = useGfx(patterns)
-  const x = 18, w = 64, y0 = 6, y1 = 94
+  const x = hours ? 28 : 18
+  const w = hours ? 54 : 64
+  const y0 = 6, y1 = 94
   const raw = useId().replace(/[^a-zA-Z0-9]/g, '')
   const y = (m: number) => y0 + (m / DAY) * (y1 - y0)
   return (
@@ -292,6 +337,14 @@ export function FaceC({ plan, now, size, patterns }: FaceProps) {
           )
         })}
       </g>
+      {hours && (
+        <g>
+          {[0, 6, 12, 18, 24].map((h) => (
+            <HourNum key={h} x={x - 13} y={y(h * 60)} size={5.6}>{h}</HourNum>
+          ))}
+        </g>
+      )}
+
       <g style={{ transform: `translateY(${f(y(now))}px)`, transformOrigin: '0 0', transformBox: 'view-box', transition: SWEEP }}>
         <line x1={x - 7} y1="0" x2={x + w + 7} y2="0" stroke="#0a0c11" strokeWidth="3" />
         <line x1={x - 7} y1="0" x2={x + w + 7} y2="0" stroke="#fff" strokeWidth="1.3" />

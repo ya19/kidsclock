@@ -78,6 +78,11 @@ at 240px while E (focus card) is unaffected — it only ever shows one thing.
 - **colorblind check** — a deuteranopia `feColorMatrix` over the face.
 - **patterns** — a distinct texture per block, so blocks stay distinguishable when
   the colors collapse.
+- **hour numbers** — off by default, because it is the one thing that puts text on
+  the kid's face. On the ring faces (A, D, G) it draws 0 / 6 / 12 / 18 outside the
+  ring and shrinks the ring to make room; on B the inner ring gets 0/3/6/9 in the
+  middle and the outer ring 12/15/18/21; on C the timeline is labelled 0 → 24 down
+  the side. E and F have no time axis to label, so the toggle does nothing there.
 
 ## The faces
 

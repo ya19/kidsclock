@@ -38,6 +38,8 @@ export type FaceProps = {
   size: number
   /** overlay a distinct pattern per block (colorblind aid) */
   patterns: boolean
+  /** draw hour numbers around the dial (learning aid; adds text to the face) */
+  hours: boolean
 }
 
 export type SizeKey = '240' | '336' | 'fill'
@@ -53,6 +55,7 @@ export type Prefs = {
   size: SizeKey
   colorblind: boolean
   patterns: boolean
+  hours: boolean
   screen: 'editor' | 'display'
   /** which day the display renders: the real weekday, or one you pick to preview */
   day: 'today' | DayIndex

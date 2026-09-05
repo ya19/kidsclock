@@ -218,6 +218,7 @@ export const defaultPrefs: Prefs = {
   size: '336',
   colorblind: false,
   patterns: false,
+  hours: false,
   screen: 'editor',
   day: 'today',
 }
