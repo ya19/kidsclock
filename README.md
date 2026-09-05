@@ -16,6 +16,25 @@ npm run dev      # http://localhost:5173
 
 That is the whole setup. `npm run build` produces a static `dist/` if you want one.
 
+## Put it on the web (free)
+
+The build is a folder of static files, so any static host works. This repo ships a
+GitHub Pages deploy: `.github/workflows/deploy.yml` builds on every push to `main`
+and publishes `dist/`. Asset paths are relative (`base: './'` in `vite.config.ts`),
+so it works at a domain root or under a project subpath like `/kidsclock/`.
+
+One-time setup:
+
+1. The repo must be **public** for Pages on a free account —
+   *Settings → General → Danger Zone → Change visibility*.
+2. *Settings → Pages → Build and deployment → Source: **GitHub Actions***.
+3. Merge this branch into `main`. The workflow runs and the URL appears under
+   *Actions → Deploy to GitHub Pages*, at `https://<user>.github.io/kidsclock/`.
+
+Every later push to `main` redeploys. To host it elsewhere instead, `npm run build`
+and drop `dist/` on Netlify, Cloudflare Pages, Vercel or any web server — no
+environment variables, no backend, nothing to configure.
+
 ## The two screens
 
 **Editor** (parent) — block list with 15-minute time pickers, color swatches, an
@@ -76,6 +95,8 @@ src/Editor.tsx  parent screen
 src/Display.tsx kid screen
 src/App.tsx     state, 30-second clock, screen toggle, persistence
 ```
+
+Plus `.github/workflows/deploy.yml` for the GitHub Pages deploy.
 
 ## Adding a seventh variant
 
