@@ -83,11 +83,11 @@ export function FaceStage({ plan, now, prefs, labels = false, className = '' }: 
           {FACES.map((f) => (
             <div key={f.key} className="flex flex-col items-center gap-1">
               <div className="overflow-hidden rounded-2xl" style={style}>
-                <Face face={f.key} plan={plan} now={now} size={px} patterns={prefs.patterns} hours={prefs.hours} dimPast={prefs.dimPast} />
+                <Face face={f.key} plan={plan} now={now} size={px} patterns={prefs.patterns} hours={prefs.hours} dimPast={prefs.dimPast} light={prefs.light} />
               </div>
               {labels && (
-                <div className="text-[11px] text-slate-400">
-                  <span className="font-semibold text-slate-200">{f.key}</span> · {f.name}
+                <div className="text-[11px] text-slate-500">
+                  <span className="font-semibold text-slate-800">{f.key}</span> · {f.name}
                 </div>
               )}
             </div>
@@ -95,7 +95,7 @@ export function FaceStage({ plan, now, prefs, labels = false, className = '' }: 
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl" style={style}>
-          <Face face={prefs.face} plan={plan} now={now} size={px} patterns={prefs.patterns} hours={prefs.hours} dimPast={prefs.dimPast} />
+          <Face face={prefs.face} plan={plan} now={now} size={px} patterns={prefs.patterns} hours={prefs.hours} dimPast={prefs.dimPast} light={prefs.light} />
         </div>
       )}
     </div>
@@ -105,11 +105,11 @@ export function FaceStage({ plan, now, prefs, labels = false, className = '' }: 
 /* ---------- controls (shared by both screens) ---------- */
 
 export const inputCls =
-  'rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-slate-100 outline-none focus:border-sky-500'
+  'rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 outline-none focus:border-sky-500'
 
 export function Toggle({ on, onChange, children }: { on: boolean; onChange: (v: boolean) => void; children: React.ReactNode }) {
   return (
-    <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-slate-300">
+    <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-slate-600">
       <input type="checkbox" checked={on} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4 accent-sky-500" />
       {children}
     </label>
@@ -131,7 +131,7 @@ export function Controls({
   const today = todayIndex()
   return (
     <div className={`flex flex-wrap items-center gap-x-5 gap-y-3 ${compact ? 'text-xs' : ''}`}>
-      <label className="flex items-center gap-2 text-sm text-slate-300">
+      <label className="flex items-center gap-2 text-sm text-slate-600">
         Face
         <select className={inputCls} value={prefs.face} onChange={(e) => setPrefs({ face: e.target.value as Prefs['face'] })}>
           {FACES.map((f) => (
@@ -144,7 +144,7 @@ export function Controls({
       </label>
 
       {showDay && (
-        <label className="flex items-center gap-2 text-sm text-slate-300">
+        <label className="flex items-center gap-2 text-sm text-slate-600">
           Day
           <select
             className={inputCls}
@@ -161,7 +161,7 @@ export function Controls({
         </label>
       )}
 
-      <label className="flex items-center gap-2 text-sm text-slate-300">
+      <label className="flex items-center gap-2 text-sm text-slate-600">
         Size
         <select className={inputCls} value={prefs.size} onChange={(e) => setPrefs({ size: e.target.value as SizeKey })}>
           {SIZES.map((s) => (
@@ -173,17 +173,17 @@ export function Controls({
       </label>
 
       <div className="flex min-w-[260px] flex-1 items-center gap-3">
-        <span className="text-sm text-slate-300">Time</span>
+        <span className="text-sm text-slate-600">Time</span>
         <input
           type="range" min={0} max={DAY - 1} step={5}
           value={Math.floor(now)}
           onChange={(e) => setScrub(Number(e.target.value))}
           className="h-1.5 flex-1 accent-sky-500"
         />
-        <span className="w-14 shrink-0 font-mono text-sm text-slate-100">{fmt(now)}</span>
+        <span className="w-14 shrink-0 font-mono text-sm text-slate-900">{fmt(now)}</span>
         <button
           onClick={() => setScrub(null)}
-          className={`whitespace-nowrap rounded-md px-2 py-1 text-xs ${scrub === null ? 'bg-emerald-600/20 text-emerald-300' : 'bg-slate-700 text-slate-200 hover:bg-slate-600'}`}
+          className={`whitespace-nowrap rounded-md px-2 py-1 text-xs ${scrub === null ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
           title="Follow the real clock again"
         >
           {scrub === null ? '● live' : 'go live'}
@@ -194,6 +194,7 @@ export function Controls({
       <Toggle on={prefs.patterns} onChange={(v) => setPrefs({ patterns: v })}>patterns</Toggle>
       <Toggle on={prefs.hours} onChange={(v) => setPrefs({ hours: v })}>hour numbers</Toggle>
       <Toggle on={prefs.dimPast} onChange={(v) => setPrefs({ dimPast: v })}>dim past</Toggle>
+      <Toggle on={prefs.light} onChange={(v) => setPrefs({ light: v })}>light face</Toggle>
     </div>
   )
 }

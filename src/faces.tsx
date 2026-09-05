@@ -13,8 +13,19 @@ const C = 50
 const EMOJI_FONT = "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif"
 const SWEEP = 'transform 800ms cubic-bezier(.4,0,.2,1)'
 const HALF = DAY / 2
-const SPENT = '#05070b'
-const SPENT_OPACITY = 0.88
+/** Everything that is not a block colour, for the two face backgrounds. */
+type Kit = {
+  bg: string
+  gap: string
+  ink: string
+  inkFaint: number
+  spent: string
+  spentOpacity: number
+}
+const kit = (light: boolean): Kit =>
+  light
+    ? { bg: '#eef1f6', gap: '#d3d9e4', ink: '#0f172a', inkFaint: 0.5, spent: '#ffffff', spentOpacity: 0.74 }
+    : { bg: '#0a0c11', gap: GAP_COLOR, ink: '#ffffff', inkFaint: 0.62, spent: '#05070b', spentOpacity: 0.88 }
 
 const f = (n: number) => Number(n.toFixed(3))
 
@@ -125,11 +136,11 @@ function Emo({ x, y, size, ch }: { x: number; y: number; size: number; ch: strin
 }
 
 /** An hour number on a dial. Text on the face is opt-in (the `hours` toggle). */
-function HourNum({ x, y, size = 6, children }: { x: number; y: number; size?: number; children: number }) {
+function HourNum({ x, y, size = 6, k, children }: { x: number; y: number; size?: number; k: Kit; children: number }) {
   return (
     <text
       x={x} y={y} fontSize={f(size)} textAnchor="middle" dominantBaseline="central"
-      fill="#fff" fillOpacity="0.62" fontFamily="ui-sans-serif, system-ui, sans-serif"
+      fill={k.ink} fillOpacity={k.inkFaint} fontFamily="ui-sans-serif, system-ui, sans-serif"
       style={{ userSelect: 'none' }}
     >
       {children}
@@ -138,24 +149,25 @@ function HourNum({ x, y, size = 6, children }: { x: number; y: number; size?: nu
 }
 
 /** Hour numbers spaced around a circular dial of `period` minutes. */
-function DialHours({ r, hours, offset = 0, period = DAY, size = 6 }: {
+function DialHours({ r, hours, offset = 0, period = DAY, size = 6, k }: {
   r: number
   hours: number[]
   offset?: number
   period?: number
   size?: number
+  k: Kit
 }) {
   return (
     <g>
       {hours.map((h) => {
         const [x, y] = pol(r, h * 60 - offset, period)
-        return <HourNum key={h} x={x} y={y} size={size}>{h}</HourNum>
+        return <HourNum key={h} x={x} y={y} size={size} k={k}>{h}</HourNum>
       })}
     </g>
   )
 }
 
-const Bg = ({ rx = 0 }: { rx?: number }) => <rect x="0" y="0" width="100" height="100" rx={rx} fill="#0a0c11" />
+const Bg = ({ k, rx = 0 }: { k: Kit; rx?: number }) => <rect x="0" y="0" width="100" height="100" rx={rx} fill={k.bg} />
 
 /** Arc-length-aware emoji size so icons never spill out of a thin slice. */
 function arcEmoji(dur: number, radius: number, band: number, period = DAY) {
@@ -163,7 +175,7 @@ function arcEmoji(dur: number, radius: number, band: number, period = DAY) {
   return Math.min(band * 0.72, chord * 0.72, 12)
 }
 
-function Ticks({ ri, ro, count = 24 }: { ri: number; ro: number; count?: number }) {
+function Ticks({ ri, ro, k, count = 24 }: { ri: number; ro: number; k: Kit; count?: number }) {
   return (
     <g>
       {Array.from({ length: count }, (_, i) => {
@@ -172,19 +184,19 @@ function Ticks({ ri, ro, count = 24 }: { ri: number; ro: number; count?: number 
         const [x2, y2] = pol(ro, (i / count) * DAY)
         return (
           <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
-            stroke="#fff" strokeOpacity={major ? 0.5 : 0.18} strokeWidth={major ? 0.9 : 0.5} strokeLinecap="round" />
+            stroke={k.ink} strokeOpacity={major ? 0.5 : 0.18} strokeWidth={major ? 0.9 : 0.5} strokeLinecap="round" />
         )
       })}
     </g>
   )
 }
 
-function Hand({ now, r0, r1, period = DAY }: { now: number; r0: number; r1: number; period?: number }) {
+function Hand({ now, r0, r1, k, period = DAY }: { now: number; r0: number; r1: number; k: Kit; period?: number }) {
   const deg = ((now % period) / period) * 360
   return (
     <g style={{ transform: `rotate(${f(deg)}deg)`, transformOrigin: '50px 50px', transformBox: 'view-box', transition: SWEEP }}>
-      <line x1={C} y1={C - r0} x2={C} y2={C - r1} stroke="#0a0c11" strokeWidth="3.2" strokeLinecap="round" opacity="0.85" />
-      <line x1={C} y1={C - r0} x2={C} y2={C - r1} stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
+      <line x1={C} y1={C - r0} x2={C} y2={C - r1} stroke={k.bg} strokeWidth="3.2" strokeLinecap="round" opacity="0.85" />
+      <line x1={C} y1={C - r0} x2={C} y2={C - r1} stroke={k.ink} strokeWidth="1.6" strokeLinecap="round" />
     </g>
   )
 }
@@ -198,7 +210,7 @@ function Hand({ now, r0, r1, period = DAY }: { now: number; r0: number; r1: numb
  * ------------------------------------------------------------------ */
 
 function RingFace({
-  plan, now, size, patterns, hours, dimPast, ri: riBase, ro: roBase, offset = 0, ticks = false, dimElapsed = false,
+  plan, now, size, patterns, hours, dimPast, light, ri: riBase, ro: roBase, offset = 0, ticks = false, dimElapsed = false,
 }: FaceProps & {
   ri: number
   ro: number
@@ -207,35 +219,36 @@ function RingFace({
   dimElapsed?: boolean
 }) {
   const { pat, defs } = useGfx(patterns)
+  const k = kit(light)
   // Hour numbers live outside the ring, so the ring gives up room for them.
-  const k = hours ? 0.86 : 1
-  const ri = riBase * k
-  const ro = roBase * k
+  const scale = hours ? 0.86 : 1
+  const ri = riBase * scale
+  const ro = roBase * scale
   const rm = (ri + ro) / 2
   const turned = (m: number) => m - offset
 
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" role="img">
       {defs}
-      <Bg />
+      <Bg k={k} />
       {segments(plan).map((s: Segment, i) => {
         const mid = (s.start + s.end) / 2
         const [ex, ey] = pol(rm, turned(mid))
         return (
           <g key={i}>
-            <Shape d={ringPath(ri, ro, turned(s.start), turned(s.end))} color={s.block?.color ?? GAP_COLOR}
+            <Shape d={ringPath(ri, ro, turned(s.start), turned(s.end))} color={s.block?.color ?? k.gap}
               index={s.index} patterns={patterns} pat={pat} />
             {s.block && <Emo x={ex} y={ey} size={arcEmoji(s.end - s.start, rm, ro - ri)} ch={s.block.icon} />}
           </g>
         )
       })}
       {(dimElapsed || dimPast) && now > 0.5 && (
-        <path d={ringPath(ri, ro, turned(0), turned(Math.min(now, DAY - 0.01)))} fill={SPENT} opacity={SPENT_OPACITY} />
+        <path d={ringPath(ri, ro, turned(0), turned(Math.min(now, DAY - 0.01)))} fill={k.spent} opacity={k.spentOpacity} />
       )}
-      {ticks && <Ticks ri={ro + 1} ro={ro + 3.4} />}
-      {hours && <DialHours r={ro + 5.6} hours={[0, 6, 12, 18]} offset={offset} size={5.4} />}
-      <Hand now={(now - offset + DAY) % DAY} r0={-2} r1={ri - 1.5} />
-      <circle cx={C} cy={C} r="2.6" fill="#fff" />
+      {ticks && <Ticks ri={ro + 1} ro={ro + 3.4} k={k} />}
+      {hours && <DialHours r={ro + 5.6} hours={[0, 6, 12, 18]} offset={offset} size={5.4} k={k} />}
+      <Hand now={(now - offset + DAY) % DAY} r0={-2} r1={ri - 1.5} k={k} />
+      <circle cx={C} cy={C} r="2.6" fill={k.ink} />
     </svg>
   )
 }
@@ -259,15 +272,16 @@ export function FaceG(p: FaceProps) {
  * B — 12h double ring (inner 00-12, outer 12-24)
  * ------------------------------------------------------------------ */
 
-export function FaceB({ plan, now, size, patterns, hours, dimPast }: FaceProps) {
+export function FaceB({ plan, now, size, patterns, hours, dimPast, light }: FaceProps) {
   const { pat, defs } = useGfx(patterns)
+  const k = kit(light)
   const rings = hours
     ? [{ ri: 17, ro: 26 }, { ri: 30, ro: 40 }]
     : [{ ri: 19, ro: 30 }, { ri: 34, ro: 46 }]
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" role="img">
       {defs}
-      <Bg />
+      <Bg k={k} />
       {rings.map((ring, r) => {
         const lo = r * HALF, hi = lo + HALF
         const rm = (ring.ri + ring.ro) / 2
@@ -282,7 +296,7 @@ export function FaceB({ plan, now, size, patterns, hours, dimPast }: FaceProps) 
                 return (
                   <g key={i}>
                     <Shape d={ringPath(ring.ri, ring.ro, s.start - lo, s.end - lo, HALF)}
-                      color={s.block?.color ?? GAP_COLOR} index={s.index} patterns={patterns} pat={pat} />
+                      color={s.block?.color ?? k.gap} index={s.index} patterns={patterns} pat={pat} />
                     {s.block && (
                       <Emo x={ex} y={ey} size={arcEmoji(s.end - s.start, rm, ring.ro - ring.ri, HALF)} ch={s.block.icon} />
                     )}
@@ -291,7 +305,7 @@ export function FaceB({ plan, now, size, patterns, hours, dimPast }: FaceProps) 
               })}
             {dimPast && now > lo + 0.5 && (
               <path d={ringPath(ring.ri, ring.ro, 0, Math.min(now, hi - 0.01) - lo, HALF)}
-                fill={SPENT} opacity={SPENT_OPACITY} />
+                fill={k.spent} opacity={k.spentOpacity} />
             )}
           </g>
         )
@@ -299,16 +313,16 @@ export function FaceB({ plan, now, size, patterns, hours, dimPast }: FaceProps) 
       {hours && (
         <>
           {/* inner ring reads like a wall clock, so it gets 0/3/6/9 in the hole */}
-          <DialHours r={11} hours={[0, 3, 6, 9]} period={HALF} size={4.6} />
-          <DialHours r={44.6} hours={[12, 15, 18, 21]} period={HALF} offset={HALF} size={5.2} />
+          <DialHours r={11} hours={[0, 3, 6, 9]} period={HALF} size={4.6} k={k} />
+          <DialHours r={44.6} hours={[12, 15, 18, 21]} period={HALF} offset={HALF} size={5.2} k={k} />
         </>
       )}
 
       {/* the hand only covers the ring for the current half of the day */}
-      <Hand now={now} period={HALF}
+      <Hand now={now} period={HALF} k={k}
         r0={now < HALF ? rings[0].ri - 2.5 : rings[1].ri - 2.5}
         r1={now < HALF ? rings[0].ro + 2.5 : rings[1].ro + 2.5} />
-      <circle cx={C} cy={C} r="2.2" fill="#fff" opacity="0.9" />
+      <circle cx={C} cy={C} r="2.2" fill={k.ink} opacity="0.9" />
     </svg>
   )
 }
@@ -317,8 +331,9 @@ export function FaceB({ plan, now, size, patterns, hours, dimPast }: FaceProps) 
  * C — vertical timeline, morning at the top
  * ------------------------------------------------------------------ */
 
-export function FaceC({ plan, now, size, patterns, hours, dimPast }: FaceProps) {
+export function FaceC({ plan, now, size, patterns, hours, dimPast, light }: FaceProps) {
   const { pat, defs } = useGfx(patterns)
+  const k = kit(light)
   const x = hours ? 28 : 18
   const w = hours ? 54 : 64
   const y0 = 6, y1 = 94
@@ -327,7 +342,7 @@ export function FaceC({ plan, now, size, patterns, hours, dimPast }: FaceProps) 
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" role="img">
       {defs}
-      <Bg />
+      <Bg k={k} />
       <clipPath id={`${raw}clip`}>
         <rect x={x} y={y0} width={w} height={y1 - y0} rx="7" />
       </clipPath>
@@ -336,29 +351,29 @@ export function FaceC({ plan, now, size, patterns, hours, dimPast }: FaceProps) 
           const h = y(s.end) - y(s.start)
           return (
             <g key={i}>
-              <Shape rect={{ x, y: y(s.start), w, h }} color={s.block?.color ?? GAP_COLOR}
+              <Shape rect={{ x, y: y(s.start), w, h }} color={s.block?.color ?? k.gap}
                 index={s.index} patterns={patterns} pat={pat} />
               {s.block && <Emo x={x + w / 2} y={y(s.start) + h / 2} size={Math.min(h * 0.7, w * 0.55, 22)} ch={s.block.icon} />}
             </g>
           )
         })}
         {dimPast && now > 0.5 && (
-          <rect x={x} y={y0} width={w} height={f(y(now) - y0)} fill={SPENT} opacity={SPENT_OPACITY} />
+          <rect x={x} y={y0} width={w} height={f(y(now) - y0)} fill={k.spent} opacity={k.spentOpacity} />
         )}
       </g>
       {hours && (
         <g>
           {[0, 6, 12, 18, 24].map((h) => (
-            <HourNum key={h} x={x - 13} y={y(h * 60)} size={5.6}>{h}</HourNum>
+            <HourNum key={h} x={x - 13} y={y(h * 60)} size={5.6} k={k}>{h}</HourNum>
           ))}
         </g>
       )}
 
       <g style={{ transform: `translateY(${f(y(now))}px)`, transformOrigin: '0 0', transformBox: 'view-box', transition: SWEEP }}>
-        <line x1={x - 7} y1="0" x2={x + w + 7} y2="0" stroke="#0a0c11" strokeWidth="3" />
-        <line x1={x - 7} y1="0" x2={x + w + 7} y2="0" stroke="#fff" strokeWidth="1.3" />
-        <path d={`M ${x - 7} -2.6 L ${x - 2.6} 0 L ${x - 7} 2.6 Z`} fill="#fff" />
-        <path d={`M ${x + w + 7} -2.6 L ${x + w + 2.6} 0 L ${x + w + 7} 2.6 Z`} fill="#fff" />
+        <line x1={x - 7} y1="0" x2={x + w + 7} y2="0" stroke={k.bg} strokeWidth="3" />
+        <line x1={x - 7} y1="0" x2={x + w + 7} y2="0" stroke={k.ink} strokeWidth="1.3" />
+        <path d={`M ${x - 7} -2.6 L ${x - 2.6} 0 L ${x - 7} 2.6 Z`} fill={k.ink} />
+        <path d={`M ${x + w + 7} -2.6 L ${x + w + 2.6} 0 L ${x + w + 7} 2.6 Z`} fill={k.ink} />
       </g>
     </svg>
   )
@@ -368,8 +383,9 @@ export function FaceC({ plan, now, size, patterns, hours, dimPast }: FaceProps) 
  * E — focus card: now fills the screen, next is a chip
  * ------------------------------------------------------------------ */
 
-export function FaceE({ plan, now, size, patterns }: FaceProps) {
+export function FaceE({ plan, now, size, patterns, light }: FaceProps) {
   const { pat, defs } = useGfx(patterns)
+  const k = kit(light)
   const cur = blockAt(plan, now)
   const next = nextBlock(plan, now)
   const span = cur ? { start: cur.start, end: cur.end } : { start: lastEnd(plan, now), end: next?.start ?? DAY }
@@ -379,21 +395,21 @@ export function FaceE({ plan, now, size, patterns }: FaceProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" role="img">
       {defs}
-      <Bg />
-      <Shape rect={{ x: 0, y: 0, w: 100, h: 100 }} color={cur?.color ?? GAP_COLOR}
+      <Bg k={k} />
+      <Shape rect={{ x: 0, y: 0, w: 100, h: 100 }} color={cur?.color ?? k.gap}
         index={idx} patterns={patterns} pat={pat} />
       {cur && <Emo x={50} y={42} size={36} ch={cur.icon} />}
       {/* how much of the current block is left */}
       <g transform="rotate(-90 50 76)">
         <circle cx="50" cy="76" r="7.5" fill="none" stroke="#000" strokeOpacity="0.3" strokeWidth="2.8" />
-        <circle cx="50" cy="76" r="7.5" fill="none" stroke="#fff" strokeOpacity="0.95" strokeWidth="2.8"
+        <circle cx="50" cy="76" r="7.5" fill="none" stroke={cur ? '#fff' : k.ink} strokeOpacity="0.95" strokeWidth="2.8"
           strokeLinecap="round" pathLength={1} strokeDasharray={`${f(left)} 1`}
           style={{ transition: 'stroke-dasharray 800ms linear' }} />
       </g>
       {next && (
         <g>
           <rect x="30" y="86" width="40" height="12" rx="6" fill="#000" fillOpacity="0.3" />
-          <path d="M37 89 L41 92 L37 95 Z" fill="#fff" fillOpacity="0.8" />
+          <path d="M37 89 L41 92 L37 95 Z" fill={cur ? '#fff' : k.ink} fillOpacity="0.8" />
           <circle cx="47.5" cy="92" r="3" fill={next.color} />
           <Emo x={58} y={92} size={8} ch={next.icon} />
         </g>
@@ -411,8 +427,9 @@ function lastEnd(plan: FaceProps['plan'], now: number) {
  * F — bead row: one dot per block, now is the big one
  * ------------------------------------------------------------------ */
 
-export function FaceF({ plan, now, size, patterns, dimPast }: FaceProps) {
+export function FaceF({ plan, now, size, patterns, dimPast, light }: FaceProps) {
   const { pat, glow, defs } = useGfx(patterns)
+  const k = kit(light)
   const blocks = sortBlocks(plan.blocks)
   const n = Math.max(1, blocks.length)
   const cols = Math.min(n, Math.max(1, Math.ceil(Math.sqrt(n * 1.7))))
@@ -444,13 +461,13 @@ export function FaceF({ plan, now, size, patterns, dimPast }: FaceProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" role="img">
       {defs}
-      <Bg />
+      <Bg k={k} />
       {Array.from({ length: rows }, (_, rw) => {
         const firstI = rw * cols
         const lastI = Math.min(n - 1, firstI + cols - 1)
         return (
           <line key={rw} x1={pos(firstI)[0]} y1={pos(firstI)[1]} x2={pos(lastI)[0]} y2={pos(lastI)[1]}
-            stroke="#fff" strokeOpacity="0.16" strokeWidth="1.2" strokeLinecap="round" />
+            stroke={k.ink} strokeOpacity="0.16" strokeWidth="1.2" strokeLinecap="round" />
         )
       })}
       {blocks.map((b, i) => {
@@ -462,7 +479,7 @@ export function FaceF({ plan, now, size, patterns, dimPast }: FaceProps) {
           <g key={b.id} filter={isNow ? glow : undefined}>
             <circle cx={x} cy={y} r={f(rr)} fill={b.color} opacity={dim} />
             {patterns && <circle cx={x} cy={y} r={f(rr)} fill={pat(i)} opacity={0.4 * dim} />}
-            {isNow && <circle cx={x} cy={y} r={f(rr)} fill="none" stroke="#fff" strokeWidth="1.2" strokeOpacity="0.95" />}
+            {isNow && <circle cx={x} cy={y} r={f(rr)} fill="none" stroke={k.ink} strokeWidth="1.2" strokeOpacity="0.95" />}
             <g opacity={dim}>
               <Emo x={x} y={y} size={rr * 1.2} ch={b.icon} />
             </g>
@@ -470,7 +487,7 @@ export function FaceF({ plan, now, size, patterns, dimPast }: FaceProps) {
         )
       })}
       <g style={{ transform: `translate(${px}px, ${py}px)`, transformOrigin: '0 0', transformBox: 'view-box', transition: SWEEP }}>
-        <path d={`M 0 ${f(r * 1.55 + 1.6)} l -2.4 4 l 4.8 0 Z`} fill="#fff" opacity="0.9" />
+        <path d={`M 0 ${f(r * 1.55 + 1.6)} l -2.4 4 l 4.8 0 Z`} fill={k.ink} opacity="0.9" />
       </g>
     </svg>
   )

@@ -220,6 +220,7 @@ export const defaultPrefs: Prefs = {
   patterns: false,
   hours: false,
   dimPast: false,
+  light: false,
   screen: 'editor',
   day: 'today',
 }

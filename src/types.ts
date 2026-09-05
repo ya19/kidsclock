@@ -42,6 +42,8 @@ export type FaceProps = {
   hours: boolean
   /** darken the part of the day that has already passed */
   dimPast: boolean
+  /** draw the face on a light background instead of near-black */
+  light: boolean
 }
 
 export type SizeKey = '240' | '336' | 'fill'
@@ -59,6 +61,7 @@ export type Prefs = {
   patterns: boolean
   hours: boolean
   dimPast: boolean
+  light: boolean
   screen: 'editor' | 'display'
   /** which day the display renders: the real weekday, or one you pick to preview */
   day: 'today' | DayIndex

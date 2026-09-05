@@ -122,6 +122,12 @@ at 240px while E (focus card) is unaffected — it only ever shows one thing.
 - **colorblind check** — a deuteranopia `feColorMatrix` over the face.
 - **patterns** — a distinct texture per block, so blocks stay distinguishable when
   the colors collapse.
+- **light face** — draws the face on a light background instead of near-black: hands,
+  ticks and hour numbers flip to dark ink, gaps become light grey, and *dim past*
+  fades spent time toward white rather than blacking it out. The editor is light
+  either way; this toggle is only about the face itself, so you can prop both up on
+  the device and see which one the kid reads faster. Dark is the default — colours
+  pop hardest against black and the device disappears on a shelf at night.
 - **dim past** — darkens the part of the day already spent, on every face that has a
   time axis: the ring faces black out the elapsed arc, C blacks out the strip above
   the now line, F drops past beads to near-black. E has a single block filling the
@@ -217,4 +223,5 @@ allowed animation, and `blockAt` / `nextBlock` from `plans.ts`.
 - Zero text on any face. Color, icon and position only.
 - No animation beyond the hand sweep (a single 800 ms transition on the hand, the
   now-line and the progress ring). Nothing blinks, nothing asks for attention.
-- Dark background everywhere, so the device disappears on a shelf at night.
+- Dark face background by default, so the device disappears on a shelf at night —
+  with a *light face* toggle when you want to compare.

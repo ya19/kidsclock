@@ -7,8 +7,8 @@ import {
 import { Controls, FaceStage, inputCls } from './ui'
 import { loadApiKey, parseDayText, parseDayWithClaude, saveApiKey } from './dayText'
 
-const btn = 'rounded-md bg-slate-700 px-2.5 py-1.5 text-sm text-slate-100 hover:bg-slate-600 active:bg-slate-500'
-const btnGhost = 'rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+const btn = 'rounded-md bg-slate-200 px-2.5 py-1.5 text-sm text-slate-800 hover:bg-slate-300 active:bg-slate-400 disabled:opacity-40'
+const btnGhost = 'rounded-md px-2 py-1 text-xs text-slate-500 hover:bg-slate-200 hover:text-slate-900 disabled:opacity-30'
 
 function Popover({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -27,7 +27,7 @@ function Popover({ open, onClose, children }: { open: boolean; onClose: () => vo
   }, [open, onClose])
   if (!open) return null
   return (
-    <div ref={ref} className="absolute left-0 top-full z-20 mt-1 rounded-lg border border-slate-700 bg-slate-900 p-2 shadow-xl">
+    <div ref={ref} className="absolute left-0 top-full z-20 mt-1 rounded-lg border border-slate-200 bg-white p-2 shadow-xl">
       {children}
     </div>
   )
@@ -60,7 +60,7 @@ function BlockRow({
   return (
     <div
       className={`flex flex-wrap items-center gap-2 rounded-lg border p-2 transition-colors ${
-        bad ? 'border-rose-500 bg-rose-500/10' : 'border-slate-800 bg-slate-900/60'
+        bad ? 'border-rose-400 bg-rose-50' : 'border-slate-200 bg-white'
       }`}
     >
       <div className="flex flex-col">
@@ -74,7 +74,7 @@ function BlockRow({
 
       <div className="relative">
         <button
-          className="h-8 w-8 rounded-md border border-slate-600"
+          className="h-8 w-8 rounded-md border border-slate-300"
           style={{ background: block.color }}
           onClick={() => setPick(pick === 'color' ? null : 'color')}
           title="Colour"
@@ -82,7 +82,7 @@ function BlockRow({
         <Popover open={pick === 'color'} onClose={() => setPick(null)}>
           <div className="grid w-44 grid-cols-4 gap-1.5">
             {PALETTE.map((c) => (
-              <button key={c} className="h-8 w-8 rounded-md border border-slate-700" style={{ background: c }}
+              <button key={c} className="h-8 w-8 rounded-md border border-slate-300" style={{ background: c }}
                 onClick={() => { onPatch({ color: c }); setPick(null) }} />
             ))}
           </div>
@@ -92,14 +92,14 @@ function BlockRow({
       </div>
 
       <div className="relative">
-        <button className="h-8 w-9 rounded-md border border-slate-600 bg-slate-800 text-lg leading-none"
+        <button className="h-8 w-9 rounded-md border border-slate-300 bg-slate-50 text-lg leading-none"
           onClick={() => setPick(pick === 'icon' ? null : 'icon')} title="Icon">
           {block.icon}
         </button>
         <Popover open={pick === 'icon'} onClose={() => setPick(null)}>
           <div className="grid w-64 grid-cols-8 gap-1">
             {EMOJI.map((e) => (
-              <button key={e} className="rounded p-1 text-xl hover:bg-slate-700"
+              <button key={e} className="rounded p-1 text-xl hover:bg-slate-200"
                 onClick={() => { onPatch({ icon: e }); setPick(null) }}>
                 {e}
               </button>
@@ -115,7 +115,7 @@ function BlockRow({
       <input className={`${inputCls} min-w-[8rem] flex-1`} value={block.label}
         placeholder="label (editor only)" onChange={(e) => onPatch({ label: e.target.value })} />
 
-      <button className={`${btn} bg-slate-800 hover:bg-rose-600`} onClick={onDelete} title="Delete block">✕</button>
+      <button className={`${btn} hover:bg-rose-500 hover:text-white`} onClick={onDelete} title="Delete block">✕</button>
     </div>
   )
 }
@@ -132,9 +132,9 @@ function WeekStrip({
 }) {
   const today = todayIndex()
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+    <div className="rounded-xl border border-slate-200 bg-white p-3">
       <div className="mb-2 flex items-baseline gap-2">
-        <span className="text-sm font-medium text-slate-200">Week</span>
+        <span className="text-sm font-medium text-slate-800">Week</span>
         <span className="text-xs text-slate-500">the display screen shows today&rsquo;s plan on its own</span>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
@@ -142,9 +142,9 @@ function WeekStrip({
           const isToday = d.i === today
           const assigned = plans.find((p) => p.id === week[d.i])
           return (
-            <div key={d.i} className={`rounded-lg border p-1.5 ${isToday ? 'border-sky-500 bg-sky-500/10' : 'border-slate-800'}`}>
+            <div key={d.i} className={`rounded-lg border p-1.5 ${isToday ? 'border-sky-500 bg-sky-50' : 'border-slate-200'}`}>
               <div className="mb-1 flex items-center justify-between">
-                <span className={`text-[11px] font-semibold ${isToday ? 'text-sky-300' : 'text-slate-400'}`}>{d.short}</span>
+                <span className={`text-[11px] font-semibold ${isToday ? 'text-sky-700' : 'text-slate-500'}`}>{d.short}</span>
                 {assigned && assigned.id !== selectedId && (
                   <button className={`${btnGhost} px-1 py-0`} title={`Edit ${assigned.name}`} onClick={() => onPick(assigned.id)}>edit</button>
                 )}
@@ -196,9 +196,9 @@ function DayWriter({ onPlan }: { onPlan: (name: string, blocks: Block[], notes: 
   }
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+    <div className="rounded-xl border border-slate-200 bg-white p-3">
       <div className="mb-2 flex items-baseline gap-2">
-        <span className="text-sm font-medium text-slate-200">Write the day</span>
+        <span className="text-sm font-medium text-slate-800">Write the day</span>
         <span className="text-xs text-slate-500">one activity per line — it becomes a new plan</span>
       </div>
       <textarea
@@ -220,8 +220,8 @@ function DayWriter({ onPlan }: { onPlan: (name: string, blocks: Block[], notes: 
       </div>
 
       {showKey && (
-        <div className="mt-2 rounded-lg border border-slate-800 bg-slate-950 p-2">
-          <p className="mb-2 text-xs text-slate-400">
+        <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
+          <p className="mb-2 text-xs text-slate-500">
             Your Anthropic key is kept in this browser only (localStorage). It is never committed, never
             sent anywhere but Anthropic, and anyone using this device can read it — so do not add it on
             the kid&rsquo;s tablet. &ldquo;Build blocks&rdquo; needs no key at all.
@@ -237,7 +237,7 @@ function DayWriter({ onPlan }: { onPlan: (name: string, blocks: Block[], notes: 
         </div>
       )}
 
-      {err && <div className="mt-2 rounded-lg border border-rose-500 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">{err}</div>}
+      {err && <div className="mt-2 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-700">{err}</div>}
     </div>
   )
 }
@@ -365,7 +365,7 @@ export default function Editor({
     <div className="grid gap-5 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,42%)]">
       {/* ---------------- left: plan + blocks ---------------- */}
       <div className="flex min-w-0 flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3">
           <select className={inputCls} value={plan.id} onChange={(e) => setSelectedId(e.target.value)}>
             {plans.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
@@ -389,7 +389,7 @@ export default function Editor({
         <DayWriter onPlan={fromText} />
 
         {io !== null && (
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+          <div className="rounded-xl border border-slate-200 bg-white p-3">
             <textarea
               className={`${inputCls} h-40 w-full font-mono text-xs`} value={io}
               placeholder='{ "name": "My plan", "blocks": [ { "start": 420, "end": 480, "color": "#f59e0b", "icon": "🥣", "label": "Breakfast" } ] }'
@@ -402,7 +402,7 @@ export default function Editor({
           </div>
         )}
 
-        {error && <div className="rounded-lg border border-rose-500 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">{error}</div>}
+        {error && <div className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
 
         <div className="flex flex-col gap-2">
           {sortBlocks(plan.blocks).map((b, i, arr) => (
@@ -427,10 +427,10 @@ export default function Editor({
 
       {/* ---------------- right: live preview ---------------- */}
       <div className="flex flex-col gap-3">
-        <div className="rounded-xl border border-slate-800 bg-slate-950 p-3">
+        <div className="rounded-xl border border-slate-200 bg-slate-100 p-3">
           <FaceStage plan={plan} now={now} prefs={prefs} labels className="h-[min(56vh,520px)] w-full" />
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+        <div className="rounded-xl border border-slate-200 bg-white p-3">
           <Controls prefs={prefs} setPrefs={setPrefs} scrub={scrub} setScrub={setScrub} now={now} />
         </div>
       </div>
