@@ -46,7 +46,7 @@ export default function Display({
             </button>
             <span className="text-xs text-slate-500">Esc closes this panel, then leaves the display</span>
           </div>
-          <Controls prefs={prefs} setPrefs={setPrefs} scrub={scrub} setScrub={setScrub} now={now} />
+          <Controls prefs={prefs} setPrefs={setPrefs} scrub={scrub} setScrub={setScrub} now={now} showDay />
         </div>
       )}
     </div>

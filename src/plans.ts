@@ -1,4 +1,4 @@
-import type { Block, Plan, Prefs, Segment } from './types'
+import type { Block, DayIndex, Plan, Prefs, Segment, WeekMap } from './types'
 
 export const DAY = 1440
 export const STEP = 15
@@ -172,11 +172,46 @@ export function seedPlans(): Plan[] {
   ]
 }
 
+/* ---------- the week ---------- */
+
+/** Monday-first for the UI; the index is Date.getDay(). */
+export const WEEKDAYS: { i: DayIndex; short: string; long: string }[] = [
+  { i: 1, short: 'Mon', long: 'Monday' },
+  { i: 2, short: 'Tue', long: 'Tuesday' },
+  { i: 3, short: 'Wed', long: 'Wednesday' },
+  { i: 4, short: 'Thu', long: 'Thursday' },
+  { i: 5, short: 'Fri', long: 'Friday' },
+  { i: 6, short: 'Sat', long: 'Saturday' },
+  { i: 0, short: 'Sun', long: 'Sunday' },
+]
+
+export const todayIndex = (d = new Date()) => d.getDay() as DayIndex
+
+export function defaultWeek(plans: Plan[]): WeekMap {
+  const byName = (n: string) => plans.find((p) => p.name === n)?.id ?? null
+  const school = byName('Weekday')
+  const home = byName('Weekend')
+  return { 0: home, 1: school, 2: school, 3: school, 4: school, 5: school, 6: home }
+}
+
+/** The plan a given weekday should show, falling back to the edited plan. */
+export function planForDay(plans: Plan[], week: WeekMap, day: DayIndex, fallbackId: string): Plan {
+  const mapped = plans.find((p) => p.id === week[day])
+  return mapped ?? plans.find((p) => p.id === fallbackId) ?? plans[0]
+}
+
+/** Drop assignments pointing at plans that no longer exist. */
+export function pruneWeek(week: WeekMap, plans: Plan[]): WeekMap {
+  const out: WeekMap = {}
+  for (const { i } of WEEKDAYS) out[i] = plans.some((p) => p.id === week[i]) ? week[i] : null
+  return out
+}
+
 /* ---------- persistence ---------- */
 
 const KEY = 'kidsclock.v1'
 
-export type Saved = { plans: Plan[]; selectedId: string; prefs: Prefs }
+export type Saved = { plans: Plan[]; selectedId: string; prefs: Prefs; week: WeekMap }
 
 export const defaultPrefs: Prefs = {
   face: 'A',
@@ -184,6 +219,7 @@ export const defaultPrefs: Prefs = {
   colorblind: false,
   patterns: false,
   screen: 'editor',
+  day: 'today',
 }
 
 function sane(p: unknown): p is Plan {
@@ -198,10 +234,12 @@ export function load(): Saved {
       const parsed = JSON.parse(raw) as Partial<Saved>
       const plans = (parsed.plans ?? []).filter(sane)
       if (plans.length) {
+        const week = parsed.week ? pruneWeek(parsed.week, plans) : defaultWeek(plans)
         return {
           plans,
           selectedId: plans.some((p) => p.id === parsed.selectedId) ? parsed.selectedId! : plans[0].id,
           prefs: { ...defaultPrefs, ...(parsed.prefs ?? {}) },
+          week,
         }
       }
     }
@@ -209,7 +247,7 @@ export function load(): Saved {
     /* fall through to seeds */
   }
   const plans = seedPlans()
-  return { plans, selectedId: plans[0].id, prefs: defaultPrefs }
+  return { plans, selectedId: plans[0].id, prefs: defaultPrefs, week: defaultWeek(plans) }
 }
 
 export function save(s: Saved) {

@@ -47,9 +47,28 @@ A live preview of the selected face sits next to the editor.
 seconds. Dev controls hide behind the small dot in the top-right corner; `Esc`
 closes that panel, `Esc` again returns to the editor.
 
+## The week
+
+Each weekday is assigned a plan in the **Week** strip at the top of the editor
+(seeded Mon–Fri → *Weekday*, Sat/Sun → *Weekend*). The display screen then shows
+**today's** plan by itself — no switching, and it rolls over at midnight on its own.
+A day set to *none* falls back to whichever plan is open in the editor. Deleting a
+plan clears any day pointing at it.
+
+To put a real school timetable in, give the school day its own plan (duplicate
+*Weekday*, rename it, assign it to that weekday) and replace the single `School`
+block with the actual periods — circle time, snack, outside, music. They are just
+blocks; nothing special is needed.
+
+Worth knowing before you do: more blocks make the ring faces busier. A day with six
+school periods plus twelve home blocks is eighteen wedges, and faces A/B/D get thin
+at 240px while E (focus card) is unaffected — it only ever shows one thing.
+
 ## Controls (on both screens)
 
 - **Face** — one of the six variants, or *Compare all six* in a grid.
+- **Day** (display screen) — *Today* follows the real weekday; pick a weekday to
+  preview what that day will look like.
 - **Size** — 240×240 (round dev board), 336×336 (Fitbit Versa 3) or fullscreen
   tablet. A chosen watch size is rendered at exactly that many CSS pixels; the
   compare grid wraps and scrolls rather than shrinking, so what you see is the
@@ -76,6 +95,7 @@ closes that panel, `Esc` again returns to the editor.
 ```ts
 type Block = { id: string; start: number; end: number; color: string; icon: string; label: string }
 type Plan  = { id: string; name: string; blocks: Block[] }
+type WeekMap = Record<number, string | null>   // Date.getDay() index -> plan id
 ```
 
 `start` / `end` are minutes from midnight (0–1440, in 15-minute steps). Blocks may

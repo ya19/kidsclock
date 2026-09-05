@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Block, Plan, Prefs } from './types'
+import type { Block, Plan, Prefs, WeekMap } from './types'
 import {
-  DAY, EMOJI, PALETTE, STEP, conflicts, fmt, isValid, planFromJson, planToJson,
-  firstGap, sortBlocks, timeOptions, uid,
+  DAY, EMOJI, PALETTE, STEP, WEEKDAYS, conflicts, fmt, isValid, planFromJson, planToJson,
+  firstGap, sortBlocks, timeOptions, todayIndex, uid,
 } from './plans'
 import { Controls, FaceStage, inputCls } from './ui'
 
@@ -119,13 +119,62 @@ function BlockRow({
   )
 }
 
+/** Which plan each weekday shows on the kid screen. */
+function WeekStrip({
+  plans, week, setWeek, selectedId, onPick,
+}: {
+  plans: Plan[]
+  week: WeekMap
+  setWeek: (w: WeekMap) => void
+  selectedId: string
+  onPick: (id: string) => void
+}) {
+  const today = todayIndex()
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+      <div className="mb-2 flex items-baseline gap-2">
+        <span className="text-sm font-medium text-slate-200">Week</span>
+        <span className="text-xs text-slate-500">the display screen shows today&rsquo;s plan on its own</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+        {WEEKDAYS.map((d) => {
+          const isToday = d.i === today
+          const assigned = plans.find((p) => p.id === week[d.i])
+          return (
+            <div key={d.i} className={`rounded-lg border p-1.5 ${isToday ? 'border-sky-500 bg-sky-500/10' : 'border-slate-800'}`}>
+              <div className="mb-1 flex items-center justify-between">
+                <span className={`text-[11px] font-semibold ${isToday ? 'text-sky-300' : 'text-slate-400'}`}>{d.short}</span>
+                {assigned && assigned.id !== selectedId && (
+                  <button className={`${btnGhost} px-1 py-0`} title={`Edit ${assigned.name}`} onClick={() => onPick(assigned.id)}>edit</button>
+                )}
+              </div>
+              <select
+                className={`${inputCls} w-full px-1 text-[11px]`}
+                value={week[d.i] ?? ''}
+                onChange={(e) => setWeek({ ...week, [d.i]: e.target.value || null })}
+              >
+                <option value="">— none —</option>
+                {plans.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function Editor({
-  plans, setPlans, selectedId, setSelectedId, prefs, setPrefs, now, scrub, setScrub,
+  plans, setPlans, selectedId, setSelectedId, week, setWeek, prefs, setPrefs, now, scrub, setScrub,
 }: {
   plans: Plan[]
   setPlans: (p: Plan[]) => void
   selectedId: string
   setSelectedId: (id: string) => void
+  week: WeekMap
+  setWeek: (w: WeekMap) => void
   prefs: Prefs
   setPrefs: (p: Partial<Prefs>) => void
   now: number
@@ -224,6 +273,7 @@ export default function Editor({
     }
   }
 
+  const daysUsing = WEEKDAYS.filter((d) => week[d.i] === plan.id).map((d) => d.short)
   const bad = conflicts(plan.blocks)
   const covered = plan.blocks.reduce((n, b) => n + (b.end - b.start), 0)
 
@@ -237,6 +287,9 @@ export default function Editor({
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
+          {daysUsing.length > 0 && (
+            <span className="text-xs text-slate-500">shows on {daysUsing.join(', ')}</span>
+          )}
           <button className={btn} onClick={newPlan}>New</button>
           <button className={btn} onClick={duplicate}>Duplicate</button>
           <button className={btn} onClick={rename}>Rename</button>
@@ -246,6 +299,8 @@ export default function Editor({
             <button className={btn} onClick={() => setIo(io === null || io.length > 0 ? '' : null)}>Import JSON</button>
           </div>
         </div>
+
+        <WeekStrip plans={plans} week={week} setWeek={setWeek} selectedId={plan.id} onPick={setSelectedId} />
 
         {io !== null && (
           <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">

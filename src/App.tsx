@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Plan, Prefs } from './types'
-import { load, minutesNow, save } from './plans'
+import type { Plan, Prefs, WeekMap } from './types'
+import { load, minutesNow, planForDay, pruneWeek, save, todayIndex } from './plans'
 import { ColorFilters } from './ui'
 import Editor from './Editor'
 import Display from './Display'
@@ -10,6 +10,7 @@ export default function App() {
   const [plans, setPlans] = useState<Plan[]>(initial.plans)
   const [selectedId, setSelectedId] = useState(initial.selectedId)
   const [prefs, setPrefsRaw] = useState<Prefs>(initial.prefs)
+  const [week, setWeek] = useState<WeekMap>(initial.week)
   const [scrub, setScrub] = useState<number | null>(null)
   const [clock, setClock] = useState(() => minutesNow())
 
@@ -21,17 +22,28 @@ export default function App() {
     return () => window.clearInterval(id)
   }, [])
 
-  useEffect(() => save({ plans, selectedId, prefs }), [plans, selectedId, prefs])
+  useEffect(() => save({ plans, selectedId, prefs, week }), [plans, selectedId, prefs, week])
 
   const plan = plans.find((p) => p.id === selectedId) ?? plans[0]
   const now = scrub ?? clock
+
+  // The kid screen follows the real weekday; `prefs.day` overrides it for previewing.
+  // `clock` re-renders every 30s, so the day flips on its own at midnight.
+  const day = prefs.day === 'today' ? todayIndex() : prefs.day
+  const displayPlan = planForDay(plans, week, day, selectedId)
+
+  // Deleting a plan must not leave a weekday pointing at it.
+  const updatePlans = (next: Plan[]) => {
+    setPlans(next)
+    setWeek((w) => pruneWeek(w, next))
+  }
 
   if (prefs.screen === 'display') {
     return (
       <>
         <ColorFilters />
         <Display
-          plan={plan} now={now} prefs={prefs} setPrefs={setPrefs}
+          plan={displayPlan} now={now} prefs={prefs} setPrefs={setPrefs}
           scrub={scrub} setScrub={setScrub} onExit={() => setPrefs({ screen: 'editor' })}
         />
       </>
@@ -61,7 +73,8 @@ export default function App() {
       </header>
 
       <Editor
-        plans={plans} setPlans={setPlans} selectedId={plan.id} setSelectedId={setSelectedId}
+        plans={plans} setPlans={updatePlans} selectedId={plan.id} setSelectedId={setSelectedId}
+        week={week} setWeek={setWeek}
         prefs={prefs} setPrefs={setPrefs} now={now} scrub={scrub} setScrub={setScrub}
       />
     </div>

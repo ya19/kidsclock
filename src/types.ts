@@ -42,10 +42,18 @@ export type FaceProps = {
 
 export type SizeKey = '240' | '336' | 'fill'
 
+/** Weekday index as returned by Date.getDay() — 0 is Sunday. */
+export type DayIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6
+
+/** Which plan each weekday uses. null = no plan assigned for that day. */
+export type WeekMap = Record<number, string | null>
+
 export type Prefs = {
   face: FaceKey | 'compare'
   size: SizeKey
   colorblind: boolean
   patterns: boolean
   screen: 'editor' | 'display'
+  /** which day the display renders: the real weekday, or one you pick to preview */
+  day: 'today' | DayIndex
 }

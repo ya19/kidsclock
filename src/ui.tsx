@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Plan, Prefs, SizeKey } from './types'
+import type { DayIndex, Plan, Prefs, SizeKey } from './types'
 import { FACES, Face } from './faces'
-import { DAY, fmt } from './plans'
+import { DAY, WEEKDAYS, fmt, todayIndex } from './plans'
 
 /* ---------- shared bits ---------- */
 
@@ -117,15 +117,18 @@ export function Toggle({ on, onChange, children }: { on: boolean; onChange: (v: 
 }
 
 export function Controls({
-  prefs, setPrefs, scrub, setScrub, now, compact = false,
+  prefs, setPrefs, scrub, setScrub, now, showDay = false, compact = false,
 }: {
   prefs: Prefs
   setPrefs: (p: Partial<Prefs>) => void
   scrub: number | null
   setScrub: (v: number | null) => void
   now: number
+  /** offer the weekday override (the display follows the real weekday by default) */
+  showDay?: boolean
   compact?: boolean
 }) {
+  const today = todayIndex()
   return (
     <div className={`flex flex-wrap items-center gap-x-5 gap-y-3 ${compact ? 'text-xs' : ''}`}>
       <label className="flex items-center gap-2 text-sm text-slate-300">
@@ -139,6 +142,24 @@ export function Controls({
           <option value="compare">Compare all six</option>
         </select>
       </label>
+
+      {showDay && (
+        <label className="flex items-center gap-2 text-sm text-slate-300">
+          Day
+          <select
+            className={inputCls}
+            value={String(prefs.day)}
+            onChange={(e) => setPrefs({ day: e.target.value === 'today' ? 'today' : (Number(e.target.value) as DayIndex) })}
+          >
+            <option value="today">Today ({WEEKDAYS.find((d) => d.i === today)!.short})</option>
+            {WEEKDAYS.map((d) => (
+              <option key={d.i} value={d.i}>
+                {d.long}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <label className="flex items-center gap-2 text-sm text-slate-300">
         Size
