@@ -66,7 +66,7 @@ at 240px while E (focus card) is unaffected — it only ever shows one thing.
 
 ## Controls (on both screens)
 
-- **Face** — one of the six variants, or *Compare all six* in a grid.
+- **Face** — one of the variants, or *Compare all faces* in a grid.
 - **Day** (display screen) — *Today* follows the real weekday; pick a weekday to
   preview what that day will look like.
 - **Size** — 240×240 (round dev board), 336×336 (Fitbit Versa 3) or fullscreen
@@ -79,16 +79,17 @@ at 240px while E (focus card) is unaffected — it only ever shows one thing.
 - **patterns** — a distinct texture per block, so blocks stay distinguishable when
   the colors collapse.
 
-## The six faces
+## The faces
 
 | | | |
 |---|---|---|
-| **A** 24h ring | single hand, colored arcs around the full circle, emoji on each arc |
+| **A** 24h ring | midnight at the top, single hand, colored arcs around the full circle, emoji on each arc |
 | **B** 12h double ring | inner ring 00:00–12:00, outer ring 12:00–24:00, hand covers the live ring |
 | **C** Vertical timeline | morning at the top, night at the bottom, a "now" line across |
 | **D** Depleting ring | elapsed time dimmed to near-black, only the rest of the day is bright |
 | **E** Focus card | screen filled with the current block's color, huge emoji, progress ring for how much of the block is left, "next up" chip at the bottom |
 | **F** Bead row | one dot per block, the current one enlarged and glowing, a pip marking now |
+| **G** 24h ring, noon up | face A turned 180° so noon is at the top and the waking day fills the upper half |
 
 ## Data model
 
@@ -118,15 +119,15 @@ src/App.tsx     state, 30-second clock, screen toggle, persistence
 
 Plus `.github/workflows/deploy.yml` for the GitHub Pages deploy.
 
-## Adding a seventh variant
+## Adding another variant
 
 Two edits, both small:
 
-1. In `src/types.ts`, widen the key union: `export type FaceKey = 'A' | … | 'F' | 'G'`.
+1. In `src/types.ts`, widen the key union: `export type FaceKey = 'A' | … | 'G' | 'H'`.
 2. In `src/faces.tsx`, write the face and register it:
 
 ```tsx
-export function FaceG({ plan, now, size, patterns }: FaceProps) {
+export function FaceH({ plan, now, size, patterns }: FaceProps) {
   const { pat, defs } = useGfx(patterns)          // per-instance patterns + glow
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" role="img">
@@ -141,11 +142,14 @@ export function FaceG({ plan, now, size, patterns }: FaceProps) {
 }
 
 // …then add to the registry at the bottom of the file:
-{ key: 'G', name: 'My variant', Comp: FaceG },
+{ key: 'H', name: 'My variant', Comp: FaceH },
 ```
 
 That is all — the dropdown, the compare grid, the size selector, the scrubber, the
 colorblind filter and the patterns toggle all pick it up from the registry.
+
+Faces A, D and G are one `RingFace` with different arguments — the cheapest kind of
+variant is a new set of arguments to something that already works.
 
 Useful pieces already in `faces.tsx`: `segments(plan)` (blocks plus gaps covering
 the whole day), `pol(r, minutes)` and `ringPath(ri, ro, m0, m1)` for circular

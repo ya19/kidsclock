@@ -12,6 +12,7 @@ const TAU = Math.PI * 2
 const C = 50
 const EMOJI_FONT = "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif"
 const SWEEP = 'transform 800ms cubic-bezier(.4,0,.2,1)'
+const HALF = DAY / 2
 
 const f = (n: number) => Number(n.toFixed(3))
 
@@ -156,38 +157,69 @@ function Hand({ now, r0, r1, period = DAY }: { now: number; r0: number; r1: numb
 }
 
 /* ------------------------------------------------------------------ *
- * A — 24h ring, single hand
+ * A / D / G — one 24h ring, three treatments
+ *
+ * `offset` is the minute placed at the top of the dial: 0 puts midnight
+ * up (A, D), 720 puts noon up (G), which drops the whole waking day into
+ * the top half of the face.
  * ------------------------------------------------------------------ */
 
-export function FaceA({ plan, now, size, patterns }: FaceProps) {
+function RingFace({
+  plan, now, size, patterns, ri, ro, offset = 0, ticks = false, dimElapsed = false,
+}: FaceProps & {
+  ri: number
+  ro: number
+  offset?: number
+  ticks?: boolean
+  dimElapsed?: boolean
+}) {
   const { pat, defs } = useGfx(patterns)
-  const ri = 29, ro = 46, rm = (ri + ro) / 2
+  const rm = (ri + ro) / 2
+  const turned = (m: number) => m - offset
+
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" role="img">
       {defs}
       <Bg />
-      {segments(plan).map((s: Segment, i) => (
-        <g key={i}>
-          <Shape d={ringPath(ri, ro, s.start, s.end)} color={s.block?.color ?? GAP_COLOR}
-            index={s.index} patterns={patterns} pat={pat} />
-          {s.block && (
-            <Emo x={pol(rm, (s.start + s.end) / 2)[0]} y={pol(rm, (s.start + s.end) / 2)[1]}
-              size={arcEmoji(s.end - s.start, rm, ro - ri)} ch={s.block.icon} />
-          )}
-        </g>
-      ))}
-      <Ticks ri={ro + 1} ro={ro + 3.4} />
-      <Hand now={now} r0={-2} r1={ri - 1.5} />
+      {segments(plan).map((s: Segment, i) => {
+        const mid = (s.start + s.end) / 2
+        const [ex, ey] = pol(rm, turned(mid))
+        return (
+          <g key={i}>
+            <Shape d={ringPath(ri, ro, turned(s.start), turned(s.end))} color={s.block?.color ?? GAP_COLOR}
+              index={s.index} patterns={patterns} pat={pat} />
+            {s.block && <Emo x={ex} y={ey} size={arcEmoji(s.end - s.start, rm, ro - ri)} ch={s.block.icon} />}
+          </g>
+        )
+      })}
+      {dimElapsed && now > 0.5 && (
+        <path d={ringPath(ri, ro, turned(0), turned(Math.min(now, DAY - 0.01)))} fill="#05070b" opacity="0.88" />
+      )}
+      {ticks && <Ticks ri={ro + 1} ro={ro + 3.4} />}
+      <Hand now={(now - offset + DAY) % DAY} r0={-2} r1={ri - 1.5} />
       <circle cx={C} cy={C} r="2.6" fill="#fff" />
     </svg>
   )
 }
 
+/** A — midnight at the top, one lap per day. */
+export function FaceA(p: FaceProps) {
+  return <RingFace {...p} ri={29} ro={46} ticks />
+}
+
+/** D — same dial, with everything already spent dimmed to near-black. */
+export function FaceD(p: FaceProps) {
+  return <RingFace {...p} ri={26} ro={47} dimElapsed />
+}
+
+/** G — noon at the top, so the waking day sits across the top half. */
+export function FaceG(p: FaceProps) {
+  return <RingFace {...p} ri={29} ro={46} offset={HALF} ticks />
+}
+
 /* ------------------------------------------------------------------ *
  * B — 12h double ring (inner 00-12, outer 12-24)
  * ------------------------------------------------------------------ */
-
-const HALF = DAY / 2
 
 export function FaceB({ plan, now, size, patterns }: FaceProps) {
   const { pat, defs } = useGfx(patterns)
@@ -266,34 +298,6 @@ export function FaceC({ plan, now, size, patterns }: FaceProps) {
         <path d={`M ${x - 7} -2.6 L ${x - 2.6} 0 L ${x - 7} 2.6 Z`} fill="#fff" />
         <path d={`M ${x + w + 7} -2.6 L ${x + w + 2.6} 0 L ${x + w + 7} 2.6 Z`} fill="#fff" />
       </g>
-    </svg>
-  )
-}
-
-/* ------------------------------------------------------------------ *
- * D — depleting ring: the day that is gone goes near-black
- * ------------------------------------------------------------------ */
-
-export function FaceD({ plan, now, size, patterns }: FaceProps) {
-  const { pat, defs } = useGfx(patterns)
-  const ri = 26, ro = 47, rm = (ri + ro) / 2
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" role="img">
-      {defs}
-      <Bg />
-      {segments(plan).map((s, i) => (
-        <g key={i}>
-          <Shape d={ringPath(ri, ro, s.start, s.end)} color={s.block?.color ?? GAP_COLOR}
-            index={s.index} patterns={patterns} pat={pat} />
-          {s.block && (
-            <Emo x={pol(rm, (s.start + s.end) / 2)[0]} y={pol(rm, (s.start + s.end) / 2)[1]}
-              size={arcEmoji(s.end - s.start, rm, ro - ri)} ch={s.block.icon} />
-          )}
-        </g>
-      ))}
-      {now > 0.5 && <path d={ringPath(ri, ro, 0, Math.min(now, DAY - 0.01))} fill="#05070b" opacity="0.88" />}
-      <Hand now={now} r0={-1} r1={ri - 1.5} />
-      <circle cx={C} cy={C} r="2.4" fill="#fff" />
     </svg>
   )
 }
@@ -423,6 +427,7 @@ export const FACES: FaceEntry[] = [
   { key: 'D', name: 'Depleting ring', Comp: FaceD },
   { key: 'E', name: 'Focus card', Comp: FaceE },
   { key: 'F', name: 'Bead row', Comp: FaceF },
+  { key: 'G', name: '24h ring, noon up', Comp: FaceG },
 ]
 
 export function Face({ face, ...props }: FaceProps & { face: FaceKey }) {

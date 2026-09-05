@@ -28,7 +28,7 @@ export type Segment = {
   index: number
 }
 
-export type FaceKey = 'A' | 'B' | 'C' | 'D' | 'E' | 'F'
+export type FaceKey = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G'
 
 export type FaceProps = {
   plan: Plan

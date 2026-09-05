@@ -139,7 +139,7 @@ export function Controls({
               {f.key} — {f.name}
             </option>
           ))}
-          <option value="compare">Compare all six</option>
+          <option value="compare">Compare all faces</option>
         </select>
       </label>
 
