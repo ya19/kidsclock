@@ -38,8 +38,8 @@ environment variables, no backend, nothing to configure.
 ## The two screens
 
 **Editor** (parent) — block list with 15-minute time pickers, color swatches, an
-icon picker (147 icons in 11 groups, searchable by what the activity *is* — "play",
-"teeth", "park" — plus a field that accepts any emoji you paste) and a label; add / delete / reorder; overlapping edits are rejected
+icon picker (280 icons in 16 groups, searchable by what the activity *is* — "playing",
+"teeth", "park", "friends" — plus a field that accepts any emoji you paste) and a label; add / delete / reorder; overlapping edits are rejected
 and the offending row is highlighted. Switch, duplicate, rename, create and delete
 plans. Export the plan as JSON to the clipboard and import JSON back as a new plan.
 A live preview of the selected face sits next to the editor.

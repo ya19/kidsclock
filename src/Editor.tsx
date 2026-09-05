@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Block, Plan, Prefs, WeekMap } from './types'
 import {
-  DAY, EMOJI_GROUPS, PALETTE, STEP, WEEKDAYS, conflicts, fmt, isValid, planFromJson, planToJson,
+  DAY, EMOJI_GROUPS, PALETTE, STEP, WEEKDAYS, conflicts, firstEmoji, fmt, isValid, planFromJson, planToJson,
   firstGap, sortBlocks, timeOptions, todayIndex, uid,
 } from './plans'
 import { Controls, FaceStage, inputCls } from './ui'
@@ -78,7 +78,7 @@ function IconPicker({ onPick }: { onPick: (ch: string) => void }) {
       </div>
       <input
         className={`${inputCls} mt-2 w-full`} placeholder="or paste any emoji"
-        onChange={(e) => { const ch = [...e.target.value][0]; if (ch) onPick(ch) }}
+        onChange={(e) => { const ch = firstEmoji(e.target.value); if (ch) onPick(ch) }}
       />
     </div>
   )

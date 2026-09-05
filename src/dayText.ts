@@ -1,5 +1,5 @@
 import type { Block } from './types'
-import { DAY, PALETTE, snap, sortBlocks, uid } from './plans'
+import { DAY, PALETTE, firstEmoji, snap, sortBlocks, uid } from './plans'
 
 /**
  * Turn a written day into blocks.
@@ -141,7 +141,7 @@ export function blocksFromDrafts(drafts: Draft[]): Parsed {
       start: row.start,
       end,
       color: row.color ?? look.color,
-      icon: row.icon ? [...row.icon][0] : look.icon,
+      icon: row.icon ? firstEmoji(row.icon) : look.icon,
       label: row.label.slice(0, 60),
     })
   })
