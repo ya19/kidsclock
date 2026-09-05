@@ -11,12 +11,93 @@ export const PALETTE = [
   '#e2e8f0', '#94a3b8', '#7c5c3e', '#0ea5e9',
 ]
 
-export const EMOJI = [
-  '😴', '🌅', '🥣', '🪥', '👕', '🎒', '🚌', '🏫',
-  '📚', '✏️', '🎨', '🧩', '🎵', '⚽', '🚲', '🛝',
-  '🍎', '🍕', '🥪', '🥕', '🛁', '📖', '🧸', '🧹',
-  '🐕', '🌳', '🚗', '✈️', '🏖️', '🎬', '💤', '🌙',
+export type Emoji = { ch: string; kw: string }
+
+const group = (name: string, pairs: [string, string][]) => ({ name, items: pairs.map(([ch, kw]) => ({ ch, kw })) })
+
+/**
+ * A picker aimed at a child's day rather than the whole Unicode set: wide enough
+ * that most activities have a fitting icon, small enough to scan. The keywords are
+ * what the search box matches; the text input below it accepts anything else.
+ */
+export const EMOJI_GROUPS: { name: string; items: Emoji[] }[] = [
+  group('Sleep & waking', [
+    ['😴', 'sleep asleep nap'], ['💤', 'sleep nap zzz'], ['🌙', 'night bedtime moon'],
+    ['⭐', 'night star'], ['🛏️', 'bed sleep'], ['🌅', 'morning wake sunrise'],
+    ['☀️', 'morning day sun'], ['⏰', 'wake alarm time'], ['🥱', 'tired yawn sleepy'],
+  ]),
+  group('Wash & dress', [
+    ['🪥', 'teeth brush tooth'], ['🛁', 'bath wash'], ['🚿', 'shower wash'],
+    ['🧼', 'soap wash hands'], ['🧴', 'cream lotion sunscreen'], ['🚽', 'toilet potty'],
+    ['👕', 'dress clothes shirt'], ['👗', 'dress clothes'], ['🧦', 'socks dress'],
+    ['👟', 'shoes dress'], ['🧥', 'coat jacket outside'], ['🎒', 'bag school backpack'],
+    ['💇', 'hair brush comb'], ['🧢', 'hat cap'],
+  ]),
+  group('Meals & snacks', [
+    ['🥣', 'breakfast cereal porridge'], ['🥞', 'breakfast pancakes'], ['🍞', 'bread toast'],
+    ['🧀', 'cheese snack'], ['🥪', 'sandwich lunch'], ['🍕', 'pizza lunch dinner'],
+    ['🍝', 'pasta dinner'], ['🍲', 'soup dinner'], ['🥗', 'salad vegetables'],
+    ['🍎', 'apple fruit snack'], ['🍌', 'banana fruit snack'], ['🍓', 'berries fruit'],
+    ['🍇', 'grapes fruit'], ['🥕', 'carrot vegetable snack'], ['🥛', 'milk drink'],
+    ['🧃', 'juice drink'], ['💧', 'water drink'], ['🍪', 'biscuit cookie treat'],
+    ['🍦', 'ice cream treat'], ['🎂', 'cake birthday party'],
+  ]),
+  group('Kindergarten & learning', [
+    ['🏫', 'school kindergarten nursery'], ['📚', 'books reading learning'], ['📖', 'story book reading'],
+    ['✏️', 'writing pencil'], ['📝', 'homework writing'], ['🎨', 'painting art'],
+    ['🖍️', 'drawing crayons colouring'], ['✂️', 'cutting craft'], ['🧩', 'puzzle'],
+    ['🔤', 'letters abc reading'], ['🔢', 'numbers counting maths'], ['🧪', 'science experiment'],
+    ['🗺️', 'map geography'], ['🎓', 'graduation school'], ['🧑‍🏫', 'teacher class'],
+    ['🪁', 'kite outside play'], ['🔬', 'science looking'],
+  ]),
+  group('Play', [
+    ['🧸', 'teddy toys play'], ['🧱', 'lego bricks blocks building'], ['🪀', 'toy play yoyo'],
+    ['🎲', 'game dice play'], ['🃏', 'cards game'], ['🛝', 'slide playground'],
+    ['🎠', 'carousel playground fair'], ['🏰', 'castle pretend play'], ['🚂', 'train toy'],
+    ['🚗', 'car toy driving'], ['🚌', 'bus school ride'], ['✈️', 'plane travel'],
+    ['🚀', 'rocket space play'], ['🦖', 'dinosaur play'], ['🪆', 'dolls play'],
+    ['🎪', 'circus show outing'], ['🎯', 'target game'], ['🫧', 'bubbles play'],
+  ]),
+  group('Moving & sport', [
+    ['⚽', 'football soccer ball sport'], ['🏀', 'basketball ball sport'], ['🎾', 'tennis ball'],
+    ['🏓', 'ping pong table tennis'], ['🚲', 'bike cycling'], ['🛴', 'scooter'],
+    ['🛹', 'skateboard'], ['🏊', 'swimming pool'], ['🤸', 'gymnastics tumbling exercise'],
+    ['🕺', 'dance dancing'], ['🧘', 'yoga calm quiet'], ['🥋', 'karate judo class'],
+    ['🤾', 'sport class'], ['🏃', 'running exercise'],
+  ]),
+  group('Outside', [
+    ['🌳', 'park tree outside'], ['🌲', 'forest woods walk'], ['🏞️', 'park nature outside'],
+    ['🌻', 'flowers garden'], ['🌷', 'flowers garden'], ['🪴', 'plants gardening'],
+    ['🏖️', 'beach holiday'], ['🌊', 'sea water swimming'], ['⛰️', 'mountain hike'],
+    ['🥾', 'walk hike'], ['🐝', 'bee nature'], ['🦋', 'butterfly nature'],
+    ['🐞', 'ladybird nature'], ['☔', 'rain wet weather'], ['❄️', 'snow cold winter'],
+    ['🌈', 'rainbow weather'],
+  ]),
+  group('Home & people', [
+    ['🏠', 'home house'], ['🧹', 'tidy cleaning chores'], ['🧺', 'laundry washing chores'],
+    ['🛒', 'shopping shop errands'], ['🧑‍🍳', 'cooking baking helping'], ['🍳', 'cooking breakfast'],
+    ['👨‍👩‍👧', 'family together'], ['👵', 'grandma visit family'], ['👴', 'grandpa visit family'],
+    ['🤗', 'hug cuddle'], ['👋', 'hello goodbye'], ['❤️', 'love favourite'],
+    ['🐕', 'dog pet walk'], ['🐈', 'cat pet'], ['🐟', 'fish pet'], ['🐰', 'rabbit pet'],
+  ]),
+  group('Screen & music', [
+    ['📺', 'tv screen cartoon'], ['🎬', 'film movie'], ['🎵', 'music song'],
+    ['🎹', 'piano music lesson'], ['🥁', 'drums music'], ['🎸', 'guitar music'],
+    ['🎤', 'singing music'], ['🎧', 'listening audio story'], ['📱', 'phone screen'],
+  ]),
+  group('Health & appointments', [
+    ['🩺', 'doctor checkup'], ['🦷', 'dentist teeth'], ['💊', 'medicine'],
+    ['😷', 'ill sick'], ['🏥', 'hospital clinic'], ['🩹', 'plaster hurt'],
+  ]),
+  group('Time & other', [
+    ['⏳', 'waiting quiet time'], ['🕐', 'clock time'], ['📅', 'calendar plan'],
+    ['🤫', 'quiet calm'], ['🎁', 'present party'],
+    ['🎈', 'party balloon'], ['🚦', 'waiting travel'], ['🧳', 'packing trip'],
+  ]),
 ]
+
+/** Flat list, for anything that just needs the characters. */
+export const EMOJI = EMOJI_GROUPS.flatMap((g) => g.items.map((i) => i.ch))
 
 export const uid = () => Math.random().toString(36).slice(2, 9)
 

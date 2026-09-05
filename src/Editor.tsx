@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Block, Plan, Prefs, WeekMap } from './types'
 import {
-  DAY, EMOJI, PALETTE, STEP, WEEKDAYS, conflicts, fmt, isValid, planFromJson, planToJson,
+  DAY, EMOJI_GROUPS, PALETTE, STEP, WEEKDAYS, conflicts, fmt, isValid, planFromJson, planToJson,
   firstGap, sortBlocks, timeOptions, todayIndex, uid,
 } from './plans'
 import { Controls, FaceStage, inputCls } from './ui'
@@ -42,6 +42,45 @@ function TimeSelect({ value, onChange, includeEnd }: { value: number; onChange: 
         </option>
       ))}
     </select>
+  )
+}
+
+/** Grouped, searchable icon set — with a free field for anything it does not carry. */
+function IconPicker({ onPick }: { onPick: (ch: string) => void }) {
+  const [q, setQ] = useState('')
+  const needle = q.trim().toLowerCase()
+  const groups = EMOJI_GROUPS.map((g) => ({
+    name: g.name,
+    items: needle ? g.items.filter((i) => i.kw.includes(needle) || i.ch === q.trim()) : g.items,
+  })).filter((g) => g.items.length)
+
+  return (
+    <div className="w-[19rem]">
+      <input
+        autoFocus className={`${inputCls} mb-2 w-full`} value={q}
+        placeholder="search — play, lunch, teeth, park…"
+        onChange={(e) => setQ(e.target.value)}
+      />
+      <div className="max-h-72 overflow-y-auto pr-1">
+        {groups.map((g) => (
+          <div key={g.name} className="mb-1">
+            <div className="sticky top-0 bg-white py-1 text-[11px] font-medium text-slate-500">{g.name}</div>
+            <div className="grid grid-cols-8 gap-0.5">
+              {g.items.map((i) => (
+                <button key={i.ch} title={i.kw} className="rounded p-1 text-xl hover:bg-slate-200" onClick={() => onPick(i.ch)}>
+                  {i.ch}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+        {!groups.length && <div className="px-1 py-3 text-xs text-slate-500">Nothing matches — paste any emoji below.</div>}
+      </div>
+      <input
+        className={`${inputCls} mt-2 w-full`} placeholder="or paste any emoji"
+        onChange={(e) => { const ch = [...e.target.value][0]; if (ch) onPick(ch) }}
+      />
+    </div>
   )
 }
 
@@ -97,18 +136,7 @@ function BlockRow({
           {block.icon}
         </button>
         <Popover open={pick === 'icon'} onClose={() => setPick(null)}>
-          <div className="grid w-64 grid-cols-8 gap-1">
-            {EMOJI.map((e) => (
-              <button key={e} className="rounded p-1 text-xl hover:bg-slate-200"
-                onClick={() => { onPatch({ icon: e }); setPick(null) }}>
-                {e}
-              </button>
-            ))}
-          </div>
-          <input
-            className={`${inputCls} mt-2 w-full`} placeholder="or paste any emoji"
-            onChange={(e) => { const ch = [...e.target.value][0]; if (ch) onPatch({ icon: ch }) }}
-          />
+          <IconPicker onPick={(ch) => { onPatch({ icon: ch }); setPick(null) }} />
         </Popover>
       </div>
 
