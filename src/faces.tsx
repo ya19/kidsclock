@@ -13,6 +13,8 @@ const C = 50
 const EMOJI_FONT = "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif"
 const SWEEP = 'transform 800ms cubic-bezier(.4,0,.2,1)'
 const HALF = DAY / 2
+const SPENT = '#05070b'
+const SPENT_OPACITY = 0.88
 
 const f = (n: number) => Number(n.toFixed(3))
 
@@ -196,7 +198,7 @@ function Hand({ now, r0, r1, period = DAY }: { now: number; r0: number; r1: numb
  * ------------------------------------------------------------------ */
 
 function RingFace({
-  plan, now, size, patterns, hours, ri: riBase, ro: roBase, offset = 0, ticks = false, dimElapsed = false,
+  plan, now, size, patterns, hours, dimPast, ri: riBase, ro: roBase, offset = 0, ticks = false, dimElapsed = false,
 }: FaceProps & {
   ri: number
   ro: number
@@ -227,8 +229,8 @@ function RingFace({
           </g>
         )
       })}
-      {dimElapsed && now > 0.5 && (
-        <path d={ringPath(ri, ro, turned(0), turned(Math.min(now, DAY - 0.01)))} fill="#05070b" opacity="0.88" />
+      {(dimElapsed || dimPast) && now > 0.5 && (
+        <path d={ringPath(ri, ro, turned(0), turned(Math.min(now, DAY - 0.01)))} fill={SPENT} opacity={SPENT_OPACITY} />
       )}
       {ticks && <Ticks ri={ro + 1} ro={ro + 3.4} />}
       {hours && <DialHours r={ro + 5.6} hours={[0, 6, 12, 18]} offset={offset} size={5.4} />}
@@ -257,7 +259,7 @@ export function FaceG(p: FaceProps) {
  * B — 12h double ring (inner 00-12, outer 12-24)
  * ------------------------------------------------------------------ */
 
-export function FaceB({ plan, now, size, patterns, hours }: FaceProps) {
+export function FaceB({ plan, now, size, patterns, hours, dimPast }: FaceProps) {
   const { pat, defs } = useGfx(patterns)
   const rings = hours
     ? [{ ri: 17, ro: 26 }, { ri: 30, ro: 40 }]
@@ -287,6 +289,10 @@ export function FaceB({ plan, now, size, patterns, hours }: FaceProps) {
                   </g>
                 )
               })}
+            {dimPast && now > lo + 0.5 && (
+              <path d={ringPath(ring.ri, ring.ro, 0, Math.min(now, hi - 0.01) - lo, HALF)}
+                fill={SPENT} opacity={SPENT_OPACITY} />
+            )}
           </g>
         )
       })}
@@ -311,7 +317,7 @@ export function FaceB({ plan, now, size, patterns, hours }: FaceProps) {
  * C — vertical timeline, morning at the top
  * ------------------------------------------------------------------ */
 
-export function FaceC({ plan, now, size, patterns, hours }: FaceProps) {
+export function FaceC({ plan, now, size, patterns, hours, dimPast }: FaceProps) {
   const { pat, defs } = useGfx(patterns)
   const x = hours ? 28 : 18
   const w = hours ? 54 : 64
@@ -336,6 +342,9 @@ export function FaceC({ plan, now, size, patterns, hours }: FaceProps) {
             </g>
           )
         })}
+        {dimPast && now > 0.5 && (
+          <rect x={x} y={y0} width={w} height={f(y(now) - y0)} fill={SPENT} opacity={SPENT_OPACITY} />
+        )}
       </g>
       {hours && (
         <g>
@@ -402,7 +411,7 @@ function lastEnd(plan: FaceProps['plan'], now: number) {
  * F — bead row: one dot per block, now is the big one
  * ------------------------------------------------------------------ */
 
-export function FaceF({ plan, now, size, patterns }: FaceProps) {
+export function FaceF({ plan, now, size, patterns, dimPast }: FaceProps) {
   const { pat, glow, defs } = useGfx(patterns)
   const blocks = sortBlocks(plan.blocks)
   const n = Math.max(1, blocks.length)
@@ -447,7 +456,7 @@ export function FaceF({ plan, now, size, patterns }: FaceProps) {
       {blocks.map((b, i) => {
         const isNow = i === curIdx
         const rr = isNow ? r * 1.55 : r
-        const dim = isNow ? 1 : now >= b.end ? 0.3 : 0.85
+        const dim = isNow ? 1 : now >= b.end ? (dimPast ? 0.12 : 0.3) : 0.85
         const [x, y] = pos(i)
         return (
           <g key={b.id} filter={isNow ? glow : undefined}>

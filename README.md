@@ -78,6 +78,11 @@ at 240px while E (focus card) is unaffected — it only ever shows one thing.
 - **colorblind check** — a deuteranopia `feColorMatrix` over the face.
 - **patterns** — a distinct texture per block, so blocks stay distinguishable when
   the colors collapse.
+- **dim past** — darkens the part of the day already spent, on every face that has a
+  time axis: the ring faces black out the elapsed arc, C blacks out the strip above
+  the now line, F drops past beads to near-black. E has a single block filling the
+  screen, so there is nothing to dim. Face D is this treatment permanently on, so
+  the toggle changes nothing there.
 - **hour numbers** — off by default, because it is the one thing that puts text on
   the kid's face. On the ring faces (A, D, G) it draws 0 / 6 / 12 / 18 outside the
   ring and shrinks the ring to make room; on B the inner ring gets 0/3/6/9 in the

@@ -219,6 +219,7 @@ export const defaultPrefs: Prefs = {
   colorblind: false,
   patterns: false,
   hours: false,
+  dimPast: false,
   screen: 'editor',
   day: 'today',
 }

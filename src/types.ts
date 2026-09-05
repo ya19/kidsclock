@@ -40,6 +40,8 @@ export type FaceProps = {
   patterns: boolean
   /** draw hour numbers around the dial (learning aid; adds text to the face) */
   hours: boolean
+  /** darken the part of the day that has already passed */
+  dimPast: boolean
 }
 
 export type SizeKey = '240' | '336' | 'fill'
@@ -56,6 +58,7 @@ export type Prefs = {
   colorblind: boolean
   patterns: boolean
   hours: boolean
+  dimPast: boolean
   screen: 'editor' | 'display'
   /** which day the display renders: the real weekday, or one you pick to preview */
   day: 'today' | DayIndex

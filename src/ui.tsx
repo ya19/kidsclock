@@ -83,7 +83,7 @@ export function FaceStage({ plan, now, prefs, labels = false, className = '' }: 
           {FACES.map((f) => (
             <div key={f.key} className="flex flex-col items-center gap-1">
               <div className="overflow-hidden rounded-2xl" style={style}>
-                <Face face={f.key} plan={plan} now={now} size={px} patterns={prefs.patterns} hours={prefs.hours} />
+                <Face face={f.key} plan={plan} now={now} size={px} patterns={prefs.patterns} hours={prefs.hours} dimPast={prefs.dimPast} />
               </div>
               {labels && (
                 <div className="text-[11px] text-slate-400">
@@ -95,7 +95,7 @@ export function FaceStage({ plan, now, prefs, labels = false, className = '' }: 
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl" style={style}>
-          <Face face={prefs.face} plan={plan} now={now} size={px} patterns={prefs.patterns} hours={prefs.hours} />
+          <Face face={prefs.face} plan={plan} now={now} size={px} patterns={prefs.patterns} hours={prefs.hours} dimPast={prefs.dimPast} />
         </div>
       )}
     </div>
@@ -193,6 +193,7 @@ export function Controls({
       <Toggle on={prefs.colorblind} onChange={(v) => setPrefs({ colorblind: v })}>colorblind check</Toggle>
       <Toggle on={prefs.patterns} onChange={(v) => setPrefs({ patterns: v })}>patterns</Toggle>
       <Toggle on={prefs.hours} onChange={(v) => setPrefs({ hours: v })}>hour numbers</Toggle>
+      <Toggle on={prefs.dimPast} onChange={(v) => setPrefs({ dimPast: v })}>dim past</Toggle>
     </div>
   )
 }
