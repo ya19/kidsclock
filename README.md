@@ -128,9 +128,12 @@ at 240px while E (focus card) is unaffected — it only ever shows one thing.
   either way; this toggle is only about the face itself, so you can prop both up on
   the device and see which one the kid reads faster. Dark is the default — colours
   pop hardest against black and the device disappears on a shelf at night.
-- **dim past** — darkens the part of the day already spent, on every face that has a
-  time axis: the ring faces black out the elapsed arc, C blacks out the strip above
-  the now line, F drops past beads to near-black. E has a single block filling the
+- **dim past** — shades the part of the day already spent, on every face that has a
+  time axis. It is deliberately gentle (52% on dark, 50% on light): done time should
+  read as *done*, not as *gone* — the child can still see what already happened, which
+  is half of what makes the clock feel like theirs. Face D is the extreme version of
+  the same idea, kept at near-black by design; compare the two side by side. Details: the ring faces black out the elapsed arc, C blacks out the strip above
+  the now line, F drops past beads to 30% opacity. E has a single block filling the
   screen, so there is nothing to dim. Face D is this treatment permanently on, so
   the toggle changes nothing there.
 - **hour numbers** — off by default, because it is the one thing that puts text on

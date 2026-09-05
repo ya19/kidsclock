@@ -20,12 +20,15 @@ type Kit = {
   ink: string
   inkFaint: number
   spent: string
-  spentOpacity: number
+  /** the toggle: done time recedes but stays readable */
+  spentSoft: number
+  /** face D's preset: the day that is gone all but disappears */
+  spentStrong: number
 }
 const kit = (light: boolean): Kit =>
   light
-    ? { bg: '#eef1f6', gap: '#d3d9e4', ink: '#0f172a', inkFaint: 0.5, spent: '#ffffff', spentOpacity: 0.74 }
-    : { bg: '#0a0c11', gap: GAP_COLOR, ink: '#ffffff', inkFaint: 0.62, spent: '#05070b', spentOpacity: 0.88 }
+    ? { bg: '#eef1f6', gap: '#d3d9e4', ink: '#0f172a', inkFaint: 0.5, spent: '#ffffff', spentSoft: 0.5, spentStrong: 0.74 }
+    : { bg: '#0a0c11', gap: GAP_COLOR, ink: '#ffffff', inkFaint: 0.62, spent: '#05070b', spentSoft: 0.52, spentStrong: 0.88 }
 
 const f = (n: number) => Number(n.toFixed(3))
 
@@ -243,7 +246,8 @@ function RingFace({
         )
       })}
       {(dimElapsed || dimPast) && now > 0.5 && (
-        <path d={ringPath(ri, ro, turned(0), turned(Math.min(now, DAY - 0.01)))} fill={k.spent} opacity={k.spentOpacity} />
+        <path d={ringPath(ri, ro, turned(0), turned(Math.min(now, DAY - 0.01)))}
+          fill={k.spent} opacity={dimElapsed ? k.spentStrong : k.spentSoft} />
       )}
       {ticks && <Ticks ri={ro + 1} ro={ro + 3.4} k={k} />}
       {hours && <DialHours r={ro + 5.6} hours={[0, 6, 12, 18]} offset={offset} size={5.4} k={k} />}
@@ -305,7 +309,7 @@ export function FaceB({ plan, now, size, patterns, hours, dimPast, light }: Face
               })}
             {dimPast && now > lo + 0.5 && (
               <path d={ringPath(ring.ri, ring.ro, 0, Math.min(now, hi - 0.01) - lo, HALF)}
-                fill={k.spent} opacity={k.spentOpacity} />
+                fill={k.spent} opacity={k.spentSoft} />
             )}
           </g>
         )
@@ -358,7 +362,7 @@ export function FaceC({ plan, now, size, patterns, hours, dimPast, light }: Face
           )
         })}
         {dimPast && now > 0.5 && (
-          <rect x={x} y={y0} width={w} height={f(y(now) - y0)} fill={k.spent} opacity={k.spentOpacity} />
+          <rect x={x} y={y0} width={w} height={f(y(now) - y0)} fill={k.spent} opacity={k.spentSoft} />
         )}
       </g>
       {hours && (
@@ -473,7 +477,7 @@ export function FaceF({ plan, now, size, patterns, dimPast, light }: FaceProps) 
       {blocks.map((b, i) => {
         const isNow = i === curIdx
         const rr = isNow ? r * 1.55 : r
-        const dim = isNow ? 1 : now >= b.end ? (dimPast ? 0.12 : 0.3) : 0.85
+        const dim = isNow ? 1 : now >= b.end ? (dimPast ? 0.3 : 0.55) : 0.85
         const [x, y] = pos(i)
         return (
           <g key={b.id} filter={isNow ? glow : undefined}>
