@@ -131,11 +131,10 @@ at 240px while E (focus card) is unaffected — it only ever shows one thing.
 - **dim past** — shades the part of the day already spent, on every face that has a
   time axis. It is deliberately gentle (52% on dark, 50% on light): done time should
   read as *done*, not as *gone* — the child can still see what already happened, which
-  is half of what makes the clock feel like theirs. Face D is the extreme version of
-  the same idea, kept at near-black by design; compare the two side by side. Details: the ring faces black out the elapsed arc, C blacks out the strip above
+  is half of what makes the clock feel like theirs. Details: the ring faces black out the elapsed arc, C blacks out the strip above
   the now line, F drops past beads to 30% opacity. E has a single block filling the
   screen, so there is nothing to dim. Face D is this treatment permanently on, so
-  the toggle changes nothing there.
+  the toggle changes nothing there — it is A plus dim-past, kept as its own preset.
 - **hour numbers** — off by default, because it is the one thing that puts text on
   the kid's face. On the ring faces (A, D, G) it draws 0 / 6 / 12 / 18 outside the
   ring and shrinks the ring to make room; on B the inner ring gets 0/3/6/9 in the
@@ -149,7 +148,7 @@ at 240px while E (focus card) is unaffected — it only ever shows one thing.
 | **A** 24h ring | midnight at the top, single hand, colored arcs around the full circle, emoji on each arc |
 | **B** 12h double ring | inner ring 00:00–12:00, outer ring 12:00–24:00, hand covers the live ring |
 | **C** Vertical timeline | morning at the top, night at the bottom, a "now" line across |
-| **D** Depleting ring | elapsed time dimmed to near-black, only the rest of the day is bright |
+| **D** Depleting ring | elapsed time shaded back without needing the toggle, so the rest of the day is what stands out |
 | **E** Focus card | screen filled with the current block's color, huge emoji, progress ring for how much of the block is left, "next up" chip at the bottom |
 | **F** Bead row | one dot per block, the current one enlarged and glowing, a pip marking now |
 | **G** 24h ring, noon up | face A turned 180° so noon is at the top and the waking day fills the upper half |

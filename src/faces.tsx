@@ -20,15 +20,13 @@ type Kit = {
   ink: string
   inkFaint: number
   spent: string
-  /** the toggle: done time recedes but stays readable */
-  spentSoft: number
-  /** face D's preset: the day that is gone all but disappears */
-  spentStrong: number
+  /** done time recedes but stays readable — it is done, not gone */
+  spentOpacity: number
 }
 const kit = (light: boolean): Kit =>
   light
-    ? { bg: '#eef1f6', gap: '#d3d9e4', ink: '#0f172a', inkFaint: 0.5, spent: '#ffffff', spentSoft: 0.5, spentStrong: 0.74 }
-    : { bg: '#0a0c11', gap: GAP_COLOR, ink: '#ffffff', inkFaint: 0.62, spent: '#05070b', spentSoft: 0.52, spentStrong: 0.88 }
+    ? { bg: '#eef1f6', gap: '#d3d9e4', ink: '#0f172a', inkFaint: 0.5, spent: '#ffffff', spentOpacity: 0.5 }
+    : { bg: '#0a0c11', gap: GAP_COLOR, ink: '#ffffff', inkFaint: 0.62, spent: '#05070b', spentOpacity: 0.52 }
 
 const f = (n: number) => Number(n.toFixed(3))
 
@@ -247,7 +245,7 @@ function RingFace({
       })}
       {(dimElapsed || dimPast) && now > 0.5 && (
         <path d={ringPath(ri, ro, turned(0), turned(Math.min(now, DAY - 0.01)))}
-          fill={k.spent} opacity={dimElapsed ? k.spentStrong : k.spentSoft} />
+          fill={k.spent} opacity={k.spentOpacity} />
       )}
       {ticks && <Ticks ri={ro + 1} ro={ro + 3.4} k={k} />}
       {hours && <DialHours r={ro + 5.6} hours={[0, 6, 12, 18]} offset={offset} size={5.4} k={k} />}
@@ -262,7 +260,7 @@ export function FaceA(p: FaceProps) {
   return <RingFace {...p} ri={29} ro={46} ticks />
 }
 
-/** D — same dial, with everything already spent dimmed to near-black. */
+/** D — same dial, with everything already spent shaded back without the toggle. */
 export function FaceD(p: FaceProps) {
   return <RingFace {...p} ri={26} ro={47} dimElapsed />
 }
@@ -309,7 +307,7 @@ export function FaceB({ plan, now, size, patterns, hours, dimPast, light }: Face
               })}
             {dimPast && now > lo + 0.5 && (
               <path d={ringPath(ring.ri, ring.ro, 0, Math.min(now, hi - 0.01) - lo, HALF)}
-                fill={k.spent} opacity={k.spentSoft} />
+                fill={k.spent} opacity={k.spentOpacity} />
             )}
           </g>
         )
@@ -362,7 +360,7 @@ export function FaceC({ plan, now, size, patterns, hours, dimPast, light }: Face
           )
         })}
         {dimPast && now > 0.5 && (
-          <rect x={x} y={y0} width={w} height={f(y(now) - y0)} fill={k.spent} opacity={k.spentSoft} />
+          <rect x={x} y={y0} width={w} height={f(y(now) - y0)} fill={k.spent} opacity={k.spentOpacity} />
         )}
       </g>
       {hours && (
