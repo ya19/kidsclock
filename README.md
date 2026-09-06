@@ -146,7 +146,7 @@ at 240px while E (focus card) is unaffected — it only ever shows one thing.
 
 | | | |
 |---|---|---|
-| **A** 24h ring | midnight at the top, one red arrow for *now*, colored arcs around the full circle, emoji on each arc |
+| **A** 24h ring | midnight at the top, one warm-metal arrow for *now*, colored arcs around the full circle, emoji on each arc |
 | **B** 12h double ring | inner ring 00:00–12:00, outer ring 12:00–24:00, hand covers the live ring |
 | **C** Vertical timeline | morning at the top, night at the bottom, a "now" line across |
 | **D** Depleting ring | elapsed time shaded back without needing the toggle, so the rest of the day is what stands out |
@@ -224,7 +224,8 @@ allowed animation, and `blockAt` / `nextBlock` from `plans.ts`.
 ## House rules the faces follow
 
 - Zero text on any face. Color, icon and position only.
-- One red arrow means *now*, on every dial. Thin shaft, arrowhead at the tip, and a
+- One warm-metal arrow means *now*, on every dial — bronze on paper, soft gold on
+  the dark dial. Thin shaft, arrowhead at the tip, and a
   halo in the dial colour so it stays readable crossing a block of its own hue.
 - No animation beyond the hand sweep (a single 800 ms transition on the hand, the
   now-line and the progress ring). Nothing blinks, nothing asks for attention.

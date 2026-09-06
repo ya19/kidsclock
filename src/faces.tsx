@@ -22,14 +22,14 @@ type Kit = {
   spent: string
   /** done time recedes but stays readable — it is done, not gone */
   spentOpacity: number
-  /** the "now" hand: one colour a child can name and follow */
+  /** the "now" hand: warm metal, so it points without shouting */
   hand: string
 }
 const kit = (light: boolean): Kit =>
   light
     ? // warm paper rather than office grey; spent time fades toward the dial itself
-      { bg: '#fbf8f3', gap: '#e7dfd2', ink: '#2b2621', inkFaint: 0.55, spent: '#fbf8f3', spentOpacity: 0.58, hand: '#dc2626' }
-    : { bg: '#0a0c11', gap: GAP_COLOR, ink: '#ffffff', inkFaint: 0.62, spent: '#05070b', spentOpacity: 0.52, hand: '#ff5252' }
+      { bg: '#fbf8f3', gap: '#e7dfd2', ink: '#2b2621', inkFaint: 0.55, spent: '#fbf8f3', spentOpacity: 0.58, hand: '#9a6a1c' }
+    : { bg: '#0a0c11', gap: GAP_COLOR, ink: '#ffffff', inkFaint: 0.62, spent: '#05070b', spentOpacity: 0.52, hand: '#f2c14e' }
 
 const f = (n: number) => Number(n.toFixed(3))
 
