@@ -22,12 +22,14 @@ type Kit = {
   spent: string
   /** done time recedes but stays readable — it is done, not gone */
   spentOpacity: number
+  /** the "now" hand: one colour a child can name and follow */
+  hand: string
 }
 const kit = (light: boolean): Kit =>
   light
     ? // warm paper rather than office grey; spent time fades toward the dial itself
-      { bg: '#fbf8f3', gap: '#e7dfd2', ink: '#2b2621', inkFaint: 0.55, spent: '#fbf8f3', spentOpacity: 0.58 }
-    : { bg: '#0a0c11', gap: GAP_COLOR, ink: '#ffffff', inkFaint: 0.62, spent: '#05070b', spentOpacity: 0.52 }
+      { bg: '#fbf8f3', gap: '#e7dfd2', ink: '#2b2621', inkFaint: 0.55, spent: '#fbf8f3', spentOpacity: 0.58, hand: '#dc2626' }
+    : { bg: '#0a0c11', gap: GAP_COLOR, ink: '#ffffff', inkFaint: 0.62, spent: '#05070b', spentOpacity: 0.52, hand: '#ff5252' }
 
 const f = (n: number) => Number(n.toFixed(3))
 
@@ -212,10 +214,18 @@ function Ticks({ ri, ro, k, count = 24 }: { ri: number; ro: number; k: Kit; coun
 
 function Hand({ now, r0, r1, k, period = DAY }: { now: number; r0: number; r1: number; k: Kit; period?: number }) {
   const deg = ((now % period) / period) * 360
+  const head = 4.4          // arrowhead length
+  const wing = 2.5          // arrowhead half-width
+  const shaft = C - r1 + head * 0.8
+  const tip = `M ${C} ${f(C - r1)} L ${f(C - wing)} ${f(C - r1 + head)} L ${f(C + wing)} ${f(C - r1 + head)} Z`
   return (
     <g style={{ transform: `rotate(${f(deg)}deg)`, transformOrigin: '50px 50px', transformBox: 'view-box', transition: SWEEP }}>
-      <line x1={C} y1={C - r0} x2={C} y2={C - r1} stroke={k.bg} strokeWidth="3.2" strokeLinecap="round" opacity="0.85" />
-      <line x1={C} y1={C - r0} x2={C} y2={C - r1} stroke={k.ink} strokeWidth="1.6" strokeLinecap="round" />
+      {/* halo in the dial colour, so the hand reads over a block of its own hue */}
+      <line x1={C} y1={f(C - r0)} x2={C} y2={f(shaft)} stroke={k.bg} strokeWidth="2.8" strokeLinecap="round" opacity="0.9" />
+      <path d={tip} fill="none" stroke={k.bg} strokeWidth="1.8" strokeLinejoin="round" opacity="0.9" />
+      {/* the hand itself: thin shaft, arrow at the end */}
+      <line x1={C} y1={f(C - r0)} x2={C} y2={f(shaft)} stroke={k.hand} strokeWidth="1.1" strokeLinecap="round" />
+      <path d={tip} fill={k.hand} strokeLinejoin="round" />
     </g>
   )
 }
@@ -268,7 +278,7 @@ function RingFace({
       {ticks && <Ticks ri={ro + 1} ro={ro + 3.4} k={k} />}
       {hours && <DialHours r={ro + 5.6} hours={[0, 6, 12, 18]} offset={offset} size={5.4} k={k} />}
       <Hand now={(now - offset + DAY) % DAY} r0={-2} r1={ri - 1.5} k={k} />
-      <circle cx={C} cy={C} r="2.6" fill={k.ink} />
+      <circle cx={C} cy={C} r="2.4" fill={k.hand} />
     </svg>
   )
 }
@@ -342,7 +352,7 @@ export function FaceB({ plan, now, size, patterns, hours, dimPast, light }: Face
       <Hand now={now} period={HALF} k={k}
         r0={now < HALF ? rings[0].ri - 2.5 : rings[1].ri - 2.5}
         r1={now < HALF ? rings[0].ro + 2.5 : rings[1].ro + 2.5} />
-      <circle cx={C} cy={C} r="2.2" fill={k.ink} opacity="0.9" />
+      <circle cx={C} cy={C} r="2.2" fill={k.hand} />
     </svg>
   )
 }
