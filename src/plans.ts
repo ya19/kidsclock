@@ -358,7 +358,7 @@ export function pruneWeek(week: WeekMap, plans: Plan[]): WeekMap {
 
 const KEY = 'kidsclock.v1'
 /** Bumped when a default changes in a way stored settings would otherwise mask. */
-const SCHEMA = 2
+const SCHEMA = 3
 
 export type Saved = { plans: Plan[]; selectedId: string; prefs: Prefs; week: WeekMap; v?: number }
 
@@ -367,8 +367,8 @@ export const defaultPrefs: Prefs = {
   size: '336',
   colorblind: false,
   patterns: false,
-  hours: false,
-  dimPast: false,
+  hours: true,
+  dimPast: true,
   light: true,
   screen: 'editor',
   day: 'today',
@@ -391,7 +391,12 @@ export function load(): Saved {
         // The light dial shipped defaulting to off, then became the default. A
         // browser that stored the old value keeps showing the dark dial forever,
         // so hand it the new default once. Toggling it back sticks from then on.
-        if ((parsed.v ?? 1) < SCHEMA) prefs.light = defaultPrefs.light
+        const stored = parsed.v ?? 1
+        if (stored < 2) prefs.light = defaultPrefs.light
+        if (stored < 3) {
+          prefs.hours = defaultPrefs.hours
+          prefs.dimPast = defaultPrefs.dimPast
+        }
         return {
           plans,
           selectedId: plans.some((p) => p.id === parsed.selectedId) ? parsed.selectedId! : plans[0].id,

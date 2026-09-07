@@ -146,15 +146,15 @@ at 240px while E (focus card) is unaffected — it only ever shows one thing.
   time toward the dial itself. Turning it off gives the original near-black dial,
   which still wins for battery on an LCD watch and for not glowing at a dark room —
   so keep comparing the two on the real device.
-- **dim past** — shades the part of the day already spent, on every face that has a
+- **dim past** — on by default. Shades the part of the day already spent, on every face that has a
   time axis. It is deliberately gentle (52% on dark, 50% on light): done time should
   read as *done*, not as *gone* — the child can still see what already happened, which
   is half of what makes the clock feel like theirs. Details: the ring faces black out the elapsed arc, C blacks out the strip above
   the now line, F drops past beads to 30% opacity. E has a single block filling the
   screen, so there is nothing to dim. Face D is this treatment permanently on, so
   the toggle changes nothing there — it is A plus dim-past, kept as its own preset.
-- **hour numbers** — off by default, because it is the one thing that puts text on
-  the kid's face. On the ring faces (A, D, G) it draws 0 / 6 / 12 / 18 outside the
+- **hour numbers** — on by default. It is the one thing that puts text on the kid's
+  face, so it stays a toggle; turn it off for a purely wordless dial. On the ring faces (A, D, G) it draws 0 / 6 / 12 / 18 outside the
   ring and shrinks the ring to make room; on B the inner ring gets 0/3/6/9 in the
   middle and the outer ring 12/15/18/21; on C the timeline is labelled 0 → 24 down
   the side. E and F have no time axis to label, so the toggle does nothing there.
