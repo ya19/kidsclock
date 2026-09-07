@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Block, Plan, Prefs, WeekMap } from './types'
 import {
-  DAY, EMOJI_GROUPS, PALETTE, STEP, WEEKDAYS, conflicts, firstEmoji, fmt, isValid, planFromJson, planToJson,
+  DAY, EMOJI_GROUPS, PALETTE, STEP, WEEKDAYS, conflicts, firstEmoji, fmt, isValid, planFromJson, planToJson, planToLink,
   firstGap, sortBlocks, timeOptions, todayIndex, uid,
 } from './plans'
 import { Controls, FaceStage, inputCls } from './ui'
@@ -290,6 +290,7 @@ export default function Editor({
   const [flash, setFlash] = useState<string | null>(null)
   const [io, setIo] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [linked, setLinked] = useState(false)
 
   const reject = (msg: string, id?: string) => {
     setError(msg)
@@ -374,6 +375,19 @@ export default function Editor({
       reject('Clipboard blocked — copy from the box below')
     }
   }
+  /** The whole plan, encoded into a URL. Nothing is stored anywhere to make this work. */
+  const shareLink = async () => {
+    const url = planToLink(plan)
+    try {
+      await navigator.clipboard.writeText(url)
+      setLinked(true)
+      window.setTimeout(() => setLinked(false), 2200)
+    } catch {
+      setIo(url)
+      reject('Clipboard blocked — copy the link from the box below')
+    }
+  }
+
   const importJson = () => {
     try {
       const p = planFromJson(io ?? '')
@@ -407,6 +421,9 @@ export default function Editor({
           <button className={btn} onClick={rename}>Rename</button>
           <button className={btn} onClick={remove}>Delete</button>
           <div className="ml-auto flex gap-2">
+            <button className={`${btn} bg-sky-600 text-white hover:bg-sky-500`} onClick={shareLink} title="Copy a link that contains this plan">
+              {linked ? 'Link copied ✓' : 'Share link'}
+            </button>
             <button className={btn} onClick={exportJson}>{copied ? 'Copied ✓' : 'Export JSON'}</button>
             <button className={btn} onClick={() => setIo(io === null || io.length > 0 ? '' : null)}>Import JSON</button>
           </div>

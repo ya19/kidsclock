@@ -92,6 +92,23 @@ Whatever comes back from Claude is snapped to 15 minutes, de-overlapped and clam
 by the same local code that handles typed input — the model is never trusted to
 produce a valid plan on its own.
 
+## Sharing a plan without a backend
+
+**Share link** copies a URL with the entire plan encoded into its fragment
+(`…/#plan=…`, around 500 characters for a full day). Send it however you like —
+message, email, whatever. Opening it on any device adds the plan and cleans the URL.
+
+Two properties worth knowing:
+
+- **Nothing is stored anywhere to make this work.** No account, no server, no
+  database. A URL fragment is never sent to the server, so the plan stays between
+  the people holding the link.
+- **It is a snapshot, not sync.** Each change means sending a fresh link, and there
+  is no merge: whoever opens a link last has that version. Real two-way sync needs a
+  server; this deliberately does not have one.
+
+A tampered or truncated link is refused rather than half-imported.
+
 ## The week
 
 Each weekday is assigned a plan in the **Week** strip at the top of the editor

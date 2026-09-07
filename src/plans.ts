@@ -270,15 +270,14 @@ export function seedPlans(): Plan[] {
       id: uid(),
       name: 'Weekday',
       blocks: [
-        B(0, 405, '#bcbbec', '😴', 'Sleep'),
-        B(405, 450, '#f7ddb3', '🌅', 'Get ready'),
-        B(450, 795, '#bce0f2', '🎒', 'Kindergarten'),
-        B(795, 840, '#70c0f2', '🚗', 'Way home'),
-        B(840, 930, '#90c58a', '🍽️', 'Lunch'),
-        B(930, 1080, '#af6cc2', '🧸', 'Playtime'),
-        B(1080, 1140, '#6ab3ab', '🛁', 'Bath'),
-        B(1140, 1170, '#df6b91', '📖', 'Book before bed'),
-        B(1170, 1440, '#5f6aba', '😴', 'Sleep'),
+        B(0, 405, '#6366f1', '😴', 'Sleep'),
+        B(405, 450, '#FFB74D', '🌅', 'Wake up & get ready'),
+        B(450, 840, '#4FC3F7', '🎒', 'Kindergarten'),
+        B(840, 930, '#81C784', '🍽', 'Pick up & lunch'),
+        B(930, 1080, '#BA68C8', '🧸', 'Play time'),
+        B(1080, 1140, '#4DB6AC', '🛁', 'Bath & light dinner'),
+        B(1140, 1170, '#F06292', '📖', 'Book time'),
+        B(1170, 1440, '#5C6BC0', '😴', 'Sleep'),
       ],
     },
     {
@@ -413,6 +412,52 @@ export function save(s: Saved) {
     localStorage.setItem(KEY, JSON.stringify({ ...s, v: SCHEMA }))
   } catch {
     /* quota / private mode — prototyping only, ignore */
+  }
+}
+
+/* ---------- sharing: the plan travels inside the link ---------- */
+
+/**
+ * A share link carries the whole plan in its URL fragment. No server, no
+ * database, no account — and because a fragment is never sent to the server,
+ * the plan stays between the two people holding the link.
+ */
+export function planToLink(plan: Plan, base = location.href): string {
+  const payload = {
+    n: plan.name,
+    b: sortBlocks(plan.blocks).map((b) => [b.start, b.end, b.color.replace('#', ''), b.icon, b.label]),
+  }
+  const bytes = new TextEncoder().encode(JSON.stringify(payload))
+  let bin = ''
+  bytes.forEach((byte) => { bin += String.fromCharCode(byte) })
+  const b64 = btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  const url = new URL(base)
+  url.hash = ''
+  return `${url.href.replace(/#$/, '')}#plan=${b64}`
+}
+
+/** Read a shared plan out of a URL fragment. Returns null if there isn't a valid one. */
+export function planFromLink(hash: string): Plan | null {
+  const m = /[#&]plan=([A-Za-z0-9_-]+)/.exec(hash)
+  if (!m) return null
+  try {
+    const b64 = m[1].replace(/-/g, '+').replace(/_/g, '/')
+    const bin = atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4))
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0))
+    const data = JSON.parse(new TextDecoder().decode(bytes)) as { n?: string; b?: unknown[][] }
+    if (!Array.isArray(data.b)) return null
+    const blocks: Block[] = data.b.map((row) => ({
+      id: uid(),
+      start: snap(Number(row[0])),
+      end: snap(Number(row[1])),
+      color: `#${String(row[2]).replace(/[^0-9a-fA-F]/g, '').slice(0, 6)}`,
+      icon: firstEmoji(String(row[3] ?? '')) || '🧩',
+      label: String(row[4] ?? '').slice(0, 60),
+    }))
+    if (!blocks.length || !isValid(blocks)) return null
+    return { id: uid(), name: typeof data.n === 'string' && data.n ? data.n : 'Shared plan', blocks: sortBlocks(blocks) }
+  } catch {
+    return null
   }
 }
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Plan, Prefs, WeekMap } from './types'
-import { load, minutesNow, planForDay, pruneWeek, save, todayIndex } from './plans'
+import { load, minutesNow, planForDay, planFromLink, pruneWeek, save, todayIndex } from './plans'
 import { ColorFilters } from './ui'
 import Editor from './Editor'
 import Display from './Display'
@@ -15,6 +15,19 @@ export default function App() {
   const [clock, setClock] = useState(() => minutesNow())
 
   const setPrefs = (p: Partial<Prefs>) => setPrefsRaw((prev) => ({ ...prev, ...p }))
+
+  /* a shared link carries a plan in its fragment — take it, then clean the URL */
+  const [shared, setShared] = useState<string | null>(null)
+  useEffect(() => {
+    const p = planFromLink(window.location.hash)
+    if (!p) return
+    setPlans((prev) => [...prev, p])
+    setSelectedId(p.id)
+    setShared(p.name)
+    history.replaceState(null, '', window.location.pathname + window.location.search)
+    const t = window.setTimeout(() => setShared(null), 6000)
+    return () => window.clearTimeout(t)
+  }, [])
 
   /* real clock, every 30 seconds */
   useEffect(() => {
@@ -71,6 +84,12 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      {shared && (
+        <div className="border-b border-emerald-300 bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
+          Added the shared plan “{shared}”. Assign it to the days you want in the Week strip below.
+        </div>
+      )}
 
       <Editor
         plans={plans} setPlans={updatePlans} selectedId={plan.id} setSelectedId={setSelectedId}
