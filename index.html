@@ -4,6 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Color Clock — prototyping bench</title>
+
+    <!-- Home screen: iOS uses the apple-touch-icon and the app title, and
+         apple-mobile-web-app-capable launches it without Safari's chrome. -->
+    <link rel="apple-touch-icon" href="./icon-180.png" />
+    <link rel="icon" type="image/png" href="./icon-192.png" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Color Clock" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#faf8f5" />
+
+    <!-- Link previews, so a shared plan looks like something when it lands -->
+    <meta property="og:title" content="Color Clock" />
+    <meta property="og:description" content="A child's day as coloured blocks instead of numbers." />
+    <meta property="og:image" content="https://ya19.github.io/kidsclock/icon-512.png" />
+    <meta name="twitter:card" content="summary" />
   </head>
   <body>
     <div id="root"></div>

@@ -16,6 +16,20 @@ npm run dev      # http://localhost:5173
 
 That is the whole setup. `npm run build` produces a static `dist/` if you want one.
 
+## Adding it to a phone's home screen
+
+`index.html` declares an `apple-touch-icon`, a web manifest and
+`apple-mobile-web-app-capable`, so **Add to Home Screen** on iOS gives it the clock
+face as its icon, the name *Color Clock*, and a launch with no browser chrome —
+which is what makes a spare phone usable as the shelf device.
+
+The icons in `public/` are rendered from the real face (face A at 10:10, no hour
+numbers and no dimming — both read as noise at icon size). To regenerate them after
+a design change, screenshot the `svg[role=img]` element at 180, 192 and 512 px.
+
+iOS caches home-screen icons: if you added the page before this shipped, remove it
+from the home screen and add it again.
+
 ## Put it on the web (free)
 
 The build is a folder of static files, so any static host works. This repo ships a
@@ -198,7 +212,8 @@ src/Display.tsx kid screen
 src/App.tsx     state, 30-second clock, screen toggle, persistence
 ```
 
-Plus `.github/workflows/deploy.yml` for the GitHub Pages deploy.
+Plus `.github/workflows/deploy.yml` for the GitHub Pages deploy, and `public/` for
+the home-screen icons and the web manifest.
 
 ## Adding another variant
 
