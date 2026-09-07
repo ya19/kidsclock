@@ -6,6 +6,7 @@ import {
 } from './plans'
 import { Controls, FaceStage, inputCls } from './ui'
 import { loadApiKey, parseDayText, parseDayWithClaude, saveApiKey } from './dayText'
+import { loadSync, saveSync } from './sync'
 
 const btn = 'rounded-md bg-slate-200 px-2.5 py-1.5 text-sm text-slate-800 hover:bg-slate-300 active:bg-slate-400 disabled:opacity-40'
 const btnGhost = 'rounded-md px-2 py-1 text-xs text-slate-500 hover:bg-slate-200 hover:text-slate-900 disabled:opacity-30'
@@ -270,8 +271,66 @@ function DayWriter({ onPlan }: { onPlan: (name: string, blocks: Block[], notes: 
   )
 }
 
+/** One shared clock for two people: an endpoint you own and one passphrase. */
+function SyncPanel({ sync, onSyncNow }: { sync: { at: number | null; error: string | null }; onSyncNow: () => void }) {
+  const [cfg, setCfg] = useState(() => loadSync() ?? { url: '', key: '' })
+  const [open, setOpen] = useState(false)
+  const on = !!loadSync()
+
+  const connect = () => {
+    saveSync(cfg.url && cfg.key ? { url: cfg.url.trim(), key: cfg.key.trim() } : null)
+    setOpen(false)
+    onSyncNow()
+  }
+  const disconnect = () => {
+    saveSync(null)
+    setCfg({ url: '', key: '' })
+    setOpen(false)
+  }
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium text-slate-800">Sync</span>
+        <span className="text-xs text-slate-500">
+          {sync.error
+            ? sync.error
+            : on
+              ? sync.at
+                ? `sharing this clock · last checked ${fmt(new Date(sync.at).getHours() * 60 + new Date(sync.at).getMinutes())}`
+                : 'sharing this clock'
+              : 'off — plans stay on this device'}
+        </span>
+        <div className="ml-auto flex gap-2">
+          {on && <button className={btn} onClick={onSyncNow}>Check now</button>}
+          <button className={btn} onClick={() => setOpen((v) => !v)}>{on ? 'Settings' : 'Set up'}</button>
+        </div>
+      </div>
+
+      {open && (
+        <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
+          <p className="mb-2 text-xs text-slate-500">
+            Paste the same two values on both phones. Anyone holding them can read and change
+            the plans, and the newest save wins — there is no merge, and no history.
+          </p>
+          <div className="flex flex-col gap-2">
+            <input className={`${inputCls} font-mono text-xs`} placeholder="https://…workers.dev"
+              value={cfg.url} onChange={(e) => setCfg({ ...cfg, url: e.target.value })} />
+            <input className={`${inputCls} font-mono text-xs`} type="password" placeholder="shared passphrase"
+              value={cfg.key} onChange={(e) => setCfg({ ...cfg, key: e.target.value })} />
+            <div className="flex gap-2">
+              <button className={`${btn} bg-sky-600 text-white hover:bg-sky-500`} onClick={connect}>Connect</button>
+              {on && <button className={btn} onClick={disconnect}>Turn off</button>}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Editor({
-  plans, setPlans, selectedId, setSelectedId, week, setWeek, prefs, setPrefs, now, scrub, setScrub,
+  plans, setPlans, selectedId, setSelectedId, week, setWeek, sync, onSyncNow, prefs, setPrefs, now, scrub, setScrub,
 }: {
   plans: Plan[]
   setPlans: (p: Plan[]) => void
@@ -279,6 +338,8 @@ export default function Editor({
   setSelectedId: (id: string) => void
   week: WeekMap
   setWeek: (w: WeekMap) => void
+  sync: { at: number | null; error: string | null }
+  onSyncNow: () => void
   prefs: Prefs
   setPrefs: (p: Partial<Prefs>) => void
   now: number
@@ -432,6 +493,8 @@ export default function Editor({
         <WeekStrip plans={plans} week={week} setWeek={setWeek} selectedId={plan.id} onPick={setSelectedId} />
 
         <DayWriter onPlan={fromText} />
+
+        <SyncPanel sync={sync} onSyncNow={onSyncNow} />
 
         {io !== null && (
           <div className="rounded-xl border border-slate-200 bg-white p-3">

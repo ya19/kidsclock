@@ -360,7 +360,7 @@ const KEY = 'kidsclock.v1'
 /** Bumped when a default changes in a way stored settings would otherwise mask. */
 const SCHEMA = 3
 
-export type Saved = { plans: Plan[]; selectedId: string; prefs: Prefs; week: WeekMap; v?: number }
+export type Saved = { plans: Plan[]; selectedId: string; prefs: Prefs; week: WeekMap; v?: number; updatedAt?: number }
 
 export const defaultPrefs: Prefs = {
   face: 'A',

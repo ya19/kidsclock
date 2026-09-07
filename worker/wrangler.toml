@@ -1,0 +1,10 @@
+name = "kidsclock-sync"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+# The one document lives here. Create the namespace once with:
+#   npx wrangler kv namespace create CLOCK
+# then paste the id it prints below.
+[[kv_namespaces]]
+binding = "CLOCK"
+id = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"

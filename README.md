@@ -106,6 +106,29 @@ Whatever comes back from Claude is snapped to 15 minutes, de-overlapped and clam
 by the same local code that handles typed input — the model is never trusted to
 produce a valid plan on its own.
 
+## Sharing one clock between two people
+
+**Editor → Sync** points the app at an endpoint you own and a passphrase you both
+hold. Plans and the week map then live in one shared document: each device pulls on
+open, when it comes back to the front, and every 30 seconds; local edits go up after
+a short pause so a burst of typing is one write. **Newest save wins** — a device that
+tries to overwrite something newer is told, and takes the newer version instead.
+
+`worker/` holds a Cloudflare Worker for this, about 50 lines, with its own setup
+notes. Deploying it takes a few minutes from a computer and costs nothing at this
+volume. The client is not tied to it: anything that answers `GET` and `PUT` with
+`{ plans, week, updatedAt }` and checks an `x-clock-key` header will do. The endpoint
+must be **https**, or the browser will block it from a page served over https.
+
+What syncs is deliberately narrow: **plans and the week map only**. Face, size,
+theme and the toggles stay per device, because which face is on the shelf tablet is
+not something the other phone should decide.
+
+Be clear-eyed about the security model: **one shared secret, no accounts, no
+identity, no history, no merge**. Anyone holding the URL and the passphrase can read
+and rewrite the plans. That is the right size for a family's routine, and the wrong
+size for anything you would mind a stranger reading.
+
 ## Sharing a plan without a backend
 
 **Share link** copies a URL with the entire plan encoded into its fragment
@@ -205,6 +228,7 @@ never appears on the kid display. Three plans ship as seeds: *Weekday*, *Weekend
 src/types.ts    types shared by everything (Block, Plan, FaceProps, Prefs)
 src/plans.ts    seeds, palette, emoji set, time helpers, overlap rules, storage, JSON import/export
 src/dayText.ts  written-day parser, the optional Claude call, and the API key in localStorage
+src/sync.ts     the shared-document client: pull, push, and where the endpoint is kept
 src/faces.tsx   geometry helpers, patterns, the six faces, the face registry
 src/ui.tsx      face stage (single + compare), size list, control bar, colorblind filter
 src/Editor.tsx  parent screen
@@ -212,8 +236,8 @@ src/Display.tsx kid screen
 src/App.tsx     state, 30-second clock, screen toggle, persistence
 ```
 
-Plus `.github/workflows/deploy.yml` for the GitHub Pages deploy, and `public/` for
-the home-screen icons and the web manifest.
+Plus `.github/workflows/deploy.yml` for the GitHub Pages deploy, `public/` for the
+home-screen icons and the web manifest, and `worker/` for the optional sync endpoint.
 
 ## Adding another variant
 
